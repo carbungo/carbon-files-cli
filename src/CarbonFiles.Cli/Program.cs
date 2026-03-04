@@ -1,7 +1,10 @@
 using CarbonFiles.Cli.Commands.Bucket;
 using CarbonFiles.Cli.Commands.Config;
 using CarbonFiles.Cli.Commands.Files;
+using CarbonFiles.Cli.Commands.Health;
 using CarbonFiles.Cli.Commands.Key;
+using CarbonFiles.Cli.Commands.Short;
+using CarbonFiles.Cli.Commands.Stats;
 using CarbonFiles.Cli.Commands.Token;
 using CarbonFiles.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,6 +68,13 @@ app.Configure(config =>
             .WithDescription("Show current dashboard token info.");
     });
 
+    config.AddBranch("short", b =>
+    {
+        b.SetDescription("Manage short URLs.");
+        b.AddCommand<ShortResolveCommand>("resolve").WithDescription("Resolve a short URL code.");
+        b.AddCommand<ShortDeleteCommand>("delete").WithDescription("Delete a short URL.");
+    });
+
     config.AddBranch("config", b =>
     {
         b.SetDescription("Manage CLI configuration and profiles.");
@@ -77,6 +87,9 @@ app.Configure(config =>
         b.AddCommand<ConfigUseCommand>("use")
             .WithDescription("Switch active profile.");
     });
+
+    config.AddCommand<StatsShowCommand>("stats").WithDescription("Show system-wide statistics.");
+    config.AddCommand<HealthCheckCommand>("health").WithDescription("Check API health status.");
 });
 
 return app.Run(args);
