@@ -2,6 +2,7 @@ using CarbonFiles.Cli.Commands.Bucket;
 using CarbonFiles.Cli.Commands.Config;
 using CarbonFiles.Cli.Commands.Files;
 using CarbonFiles.Cli.Commands.Key;
+using CarbonFiles.Cli.Commands.Token;
 using CarbonFiles.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
@@ -47,6 +48,21 @@ app.Configure(config =>
         b.AddCommand<KeyCreateCommand>("create").WithDescription("Create a new API key.");
         b.AddCommand<KeyDeleteCommand>("delete").WithDescription("Revoke an API key.");
         b.AddCommand<KeyUsageCommand>("usage").WithDescription("Show API key usage stats.");
+    });
+
+    config.AddBranch("token", token =>
+    {
+        token.SetDescription("Manage tokens.");
+        token.AddBranch("create", create =>
+        {
+            create.SetDescription("Create tokens.");
+            create.AddCommand<TokenCreateUploadCommand>("upload")
+                .WithDescription("Create an upload token for a bucket.");
+            create.AddCommand<TokenCreateDashboardCommand>("dashboard")
+                .WithDescription("Create a dashboard token.");
+        });
+        token.AddCommand<TokenInfoCommand>("info")
+            .WithDescription("Show current dashboard token info.");
     });
 
     config.AddBranch("config", b =>
