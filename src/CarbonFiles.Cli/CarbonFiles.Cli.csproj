@@ -14,16 +14,21 @@
     <Version>0.1.0</Version>
     <Authors>CarbonFiles</Authors>
     <Description>CLI tool for CarbonFiles file-sharing API</Description>
+    <PackageTags>carbonfiles;cli;file-sharing</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/carbungo/carbon-files-cli</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CarbonFiles.Client" Version="0.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
     <PackageReference Include="Spectre.Console" Version="0.54.0" />
     <PackageReference Include="Spectre.Console.Cli" Version="0.53.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\carbon-files\clients\csharp\CarbonFiles.Client.csproj" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT: src/CarbonFiles.Cli/CarbonFiles.Cli.csproj
+
+jobs:
+  publish-nuget-tool:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Extract version from tag
+        id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Pack as dotnet tool
+        run: >-
+          dotnet pack ${{ env.PROJECT }}
+          --configuration Release
+          -p:PackageVersion=${{ steps.version.outputs.value }}
+
+      - name: Publish to NuGet
+        run: >-
+          dotnet nuget push src/CarbonFiles.Cli/bin/Release/*.nupkg
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+
+  publish-binaries:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+            artifact: cf-linux-x64
+          - rid: linux-arm64
+            artifact: cf-linux-arm64
+          - rid: osx-x64
+            artifact: cf-osx-x64
+          - rid: osx-arm64
+            artifact: cf-osx-arm64
+          - rid: win-x64
+            artifact: cf-win-x64.exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Extract version from tag
+        id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish self-contained binary
+        run: >-
+          dotnet publish ${{ env.PROJECT }}
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=${{ steps.version.outputs.value }}
+          -o publish
+
+      - name: Rename binary
+        run: |
+          cd publish
+          if [ -f cf ]; then
+            mv cf "$ARTIFACT_NAME"
+          elif [ -f cf.exe ]; then
+            mv cf.exe "$ARTIFACT_NAME"
+          fi
+        env:
+          ARTIFACT_NAME: ${{ matrix.artifact }}
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+          ARTIFACT: ${{ matrix.artifact }}
+        run: gh release upload "$TAG_NAME" "publish/$ARTIFACT" --clobber
