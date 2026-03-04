@@ -7,6 +7,7 @@ using CarbonFiles.Cli.Commands.Short;
 using CarbonFiles.Cli.Commands.Stats;
 using CarbonFiles.Cli.Commands.Token;
 using CarbonFiles.Cli.Infrastructure;
+using CarbonFiles.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -15,6 +16,12 @@ var services = new ServiceCollection();
 
 var cliConfig = CliConfiguration.Load();
 services.AddSingleton(cliConfig);
+services.AddSingleton<ApiClientFactory>();
+services.AddTransient<ICarbonFilesApi>(sp =>
+{
+    var factory = sp.GetRequiredService<ApiClientFactory>();
+    return factory.Create();
+});
 
 var registrar = new TypeRegistrar(services);
 var app = new CommandApp(registrar);
