@@ -1,6 +1,7 @@
 using CarbonFiles.Cli.Commands.Bucket;
 using CarbonFiles.Cli.Commands.Config;
 using CarbonFiles.Cli.Commands.Files;
+using CarbonFiles.Cli.Commands.Key;
 using CarbonFiles.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
@@ -37,6 +38,15 @@ app.Configure(config =>
         b.AddCommand<FileDeleteCommand>("delete").WithDescription("Delete a file.");
         b.AddCommand<FileUploadCommand>("upload").WithDescription("Upload files to a bucket.");
         b.AddCommand<FileDownloadCommand>("download").WithDescription("Download a file from a bucket.");
+    });
+
+    config.AddBranch("key", b =>
+    {
+        b.SetDescription("Manage API keys.");
+        b.AddCommand<KeyListCommand>("list").WithDescription("List all API keys.");
+        b.AddCommand<KeyCreateCommand>("create").WithDescription("Create a new API key.");
+        b.AddCommand<KeyDeleteCommand>("delete").WithDescription("Revoke an API key.");
+        b.AddCommand<KeyUsageCommand>("usage").WithDescription("Show API key usage stats.");
     });
 
     config.AddBranch("config", b =>
