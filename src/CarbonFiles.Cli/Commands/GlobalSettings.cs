@@ -13,4 +13,9 @@ public class GlobalSettings : CommandSettings
     [CommandOption("--profile <PROFILE>")]
     [Description("Use a specific config profile for this command.")]
     public string? Profile { get; init; }
+
+    [CommandOption("-v|--verbose")]
+    [Description("Show HTTP request and response details.")]
+    [DefaultValue(false)]
+    public bool Verbose { get; init; }
 }

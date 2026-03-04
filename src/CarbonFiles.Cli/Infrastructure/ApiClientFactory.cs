@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CarbonFiles.Client;
 using Refit;
+using Spectre.Console;
 
 namespace CarbonFiles.Cli.Infrastructure;
 
@@ -19,25 +20,12 @@ public sealed class ApiClientFactory(CliConfiguration config)
         ContentSerializer = new SystemTextJsonContentSerializer(JsonOptions)
     };
 
+    public IAnsiConsole? VerboseConsole { get; set; }
+
     public ICarbonFilesApi Create(string? profileName = null)
     {
-        var profile = profileName is not null
-            ? config.Profiles.GetValueOrDefault(profileName)
-            : config.GetActiveProfile();
-
-        if (profile is null)
-        {
-            throw new InvalidOperationException(
-                "No server configured. Run: cf config set --url <url> --token <token>");
-        }
-
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(profile.Url)
-        };
-        httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", profile.Token);
-
+        var profile = GetProfile(profileName);
+        var httpClient = BuildHttpClient(profile);
         return RestService.For<ICarbonFilesApi>(httpClient, RefitSettings);
     }
 
@@ -58,20 +46,24 @@ public sealed class ApiClientFactory(CliConfiguration config)
 
     public HttpClient CreateHttpClient(string? profileName = null)
     {
-        var profile = profileName is not null
-            ? config.Profiles.GetValueOrDefault(profileName)
-            : config.GetActiveProfile();
+        var profile = GetProfile(profileName);
+        return BuildHttpClient(profile);
+    }
 
-        if (profile is null)
+    private HttpClient BuildHttpClient(Profile profile)
+    {
+        HttpClient httpClient;
+
+        if (VerboseConsole is not null)
         {
-            throw new InvalidOperationException(
-                "No server configured. Run: cf config set --url <url> --token <token>");
+            var handler = new VerboseLoggingHandler(VerboseConsole);
+            httpClient = new HttpClient(handler) { BaseAddress = new Uri(profile.Url) };
+        }
+        else
+        {
+            httpClient = new HttpClient { BaseAddress = new Uri(profile.Url) };
         }
 
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(profile.Url)
-        };
         httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", profile.Token);
 

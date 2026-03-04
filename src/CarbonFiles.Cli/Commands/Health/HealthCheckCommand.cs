@@ -32,7 +32,9 @@ public sealed class HealthCheckCommand(ICarbonFilesApi api, IAnsiConsole console
             ? $"{uptime.Days}d {uptime.Hours}h {uptime.Minutes}m"
             : uptime.Hours > 0
                 ? $"{uptime.Hours}h {uptime.Minutes}m"
-                : $"{uptime.Minutes}m";
+                : uptime.TotalMinutes >= 1
+                    ? $"{uptime.Minutes}m"
+                    : $"{uptime.Seconds}s";
 
         console.MarkupLine($"[bold]Uptime:[/]  {uptimeStr}");
         console.MarkupLine($"[bold]DB:[/]     {Markup.Escape(health.Db)}");

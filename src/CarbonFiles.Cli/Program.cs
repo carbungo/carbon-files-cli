@@ -18,8 +18,9 @@ Console.InputEncoding = System.Text.Encoding.UTF8;
 var services = new ServiceCollection();
 
 var cliConfig = CliConfiguration.Load();
+var apiFactory = new ApiClientFactory(cliConfig);
 services.AddSingleton(cliConfig);
-services.AddSingleton<ApiClientFactory>();
+services.AddSingleton(apiFactory);
 services.AddTransient<ICarbonFilesApi>(sp =>
 {
     var factory = sp.GetRequiredService<ApiClientFactory>();
@@ -33,6 +34,7 @@ app.Configure(config =>
 {
     config.SetApplicationName("cf");
     config.SetApplicationVersion("0.1.0");
+    config.SetInterceptor(new VerboseInterceptor(apiFactory));
 
     config.AddBranch("bucket", b =>
     {

@@ -15,8 +15,7 @@ public static class ErrorHandler
                 return 1;
 
             case HttpRequestException httpEx:
-                console.MarkupLine($"[red]Connection error:[/] {Markup.Escape(httpEx.Message)}");
-                console.MarkupLine("[dim]Check your server URL with: cf config show[/]");
+                HandleHttpRequestException(httpEx, console);
                 return 1;
 
             case InvalidOperationException opEx when opEx.Message.Contains("cf config set"):
@@ -24,9 +23,35 @@ public static class ErrorHandler
                 return 1;
 
             default:
+                // Check for wrapped ApiException in InnerException
+                if (ex.InnerException is ApiException innerApiEx)
+                {
+                    HandleApiException(innerApiEx, console);
+                    return 1;
+                }
                 console.MarkupLine($"[red]Error:[/] {Markup.Escape(ex.Message)}");
                 return 1;
         }
+    }
+
+    private static void HandleHttpRequestException(HttpRequestException ex, IAnsiConsole console)
+    {
+        if (ex.StatusCode.HasValue)
+        {
+            console.MarkupLine($"[red]HTTP {(int)ex.StatusCode.Value} {ex.StatusCode.Value}[/]");
+            // Check inner exception for ApiException with content
+            if (ex.InnerException is ApiException innerApiEx)
+            {
+                HandleApiException(innerApiEx, console);
+                return;
+            }
+        }
+        else
+        {
+            console.MarkupLine($"[red]Connection error:[/] {Markup.Escape(ex.Message)}");
+        }
+
+        console.MarkupLine("[dim]Check your server URL with: cf config show[/]");
     }
 
     private static void HandleApiException(ApiException ex, IAnsiConsole console)
