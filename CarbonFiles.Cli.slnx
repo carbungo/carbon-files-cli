@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CarbonFiles.Cli/CarbonFiles.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CarbonFiles.Cli.Tests/CarbonFiles.Cli.Tests.csproj" />
+  </Folder>
+</Solution>
