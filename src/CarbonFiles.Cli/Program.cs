@@ -35,6 +35,8 @@ app.Configure(config =>
         b.AddCommand<FileListCommand>("list").WithDescription("List files in a bucket.");
         b.AddCommand<FileInfoCommand>("info").WithDescription("Show file details.");
         b.AddCommand<FileDeleteCommand>("delete").WithDescription("Delete a file.");
+        b.AddCommand<FileUploadCommand>("upload").WithDescription("Upload files to a bucket.");
+        b.AddCommand<FileDownloadCommand>("download").WithDescription("Download a file from a bucket.");
     });
 
     config.AddBranch("config", b =>
