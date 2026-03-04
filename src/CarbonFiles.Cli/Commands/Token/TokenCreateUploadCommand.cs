@@ -34,6 +34,12 @@ public sealed class TokenCreateUploadCommand(ICarbonFilesApi api, IAnsiConsole c
 
         var result = await api.Tokens(settings.BucketId, request, cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(result));
+            return 0;
+        }
+
         var panel = new Panel(
             new Rows(
                 new Markup(""),

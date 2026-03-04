@@ -1,3 +1,4 @@
+using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -10,6 +11,12 @@ public sealed class HealthCheckCommand(ICarbonFilesApi api, IAnsiConsole console
     public override async Task<int> ExecuteAsync(CommandContext context, GlobalSettings settings, CancellationToken cancellation)
     {
         var health = await api.Healthz(cancellation);
+
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(health));
+            return 0;
+        }
 
         if (string.Equals(health.Status, "Healthy", StringComparison.OrdinalIgnoreCase))
         {

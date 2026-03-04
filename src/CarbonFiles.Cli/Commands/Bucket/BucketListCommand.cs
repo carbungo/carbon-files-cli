@@ -37,6 +37,12 @@ public sealed class BucketListCommand(ICarbonFilesApi api, IAnsiConsole console)
             settings.IncludeExpired ? true : null,
             cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(result));
+            return 0;
+        }
+
         if (result.Items.Count == 0)
         {
             console.MarkupLine("[yellow]No buckets found.[/]");

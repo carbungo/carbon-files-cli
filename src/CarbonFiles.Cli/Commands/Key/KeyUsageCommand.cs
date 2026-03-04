@@ -20,6 +20,12 @@ public sealed class KeyUsageCommand(ICarbonFilesApi api, IAnsiConsole console)
     {
         var result = await api.Usage(settings.Prefix, cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(result));
+            return 0;
+        }
+
         var grid = new Grid();
         grid.AddColumn();
         grid.AddColumn();

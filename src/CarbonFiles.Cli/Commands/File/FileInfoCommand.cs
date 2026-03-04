@@ -24,6 +24,12 @@ public sealed class FileInfoCommand(ICarbonFilesApi api, IAnsiConsole console)
     {
         var file = await api.FilesGET2(settings.BucketId, settings.Path, cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(file));
+            return 0;
+        }
+
         var table = new Table().NoBorder().HideHeaders();
         table.AddColumn("Property");
         table.AddColumn("Value");

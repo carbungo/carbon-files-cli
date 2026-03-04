@@ -50,6 +50,12 @@ public sealed class FileListCommand(ICarbonFilesApi api, IAnsiConsole console)
             null,
             cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(result));
+            return 0;
+        }
+
         if (result.Items.Count == 0)
         {
             console.MarkupLine("[yellow]No files found.[/]");
@@ -87,6 +93,12 @@ public sealed class FileListCommand(ICarbonFilesApi api, IAnsiConsole console)
             null,
             null,
             cancellation);
+
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(result));
+            return 0;
+        }
 
         var totalItems = result.Folders.Count + result.Files.Count;
 

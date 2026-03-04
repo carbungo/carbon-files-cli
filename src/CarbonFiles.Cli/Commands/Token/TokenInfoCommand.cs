@@ -14,6 +14,12 @@ public sealed class TokenInfoCommand(ICarbonFilesApi api, IAnsiConsole console)
     {
         var info = await api.Me(cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(info));
+            return 0;
+        }
+
         var table = new Table { Border = TableBorder.Rounded };
         table.AddColumn("Property");
         table.AddColumn("Value");

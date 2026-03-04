@@ -20,6 +20,12 @@ public sealed class BucketInfoCommand(ICarbonFilesApi api, IAnsiConsole console)
     {
         var bucket = await api.BucketsGET2(settings.Id, cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(bucket));
+            return 0;
+        }
+
         var infoTable = new Table().NoBorder().HideHeaders();
         infoTable.AddColumn("Property");
         infoTable.AddColumn("Value");

@@ -25,6 +25,12 @@ public sealed class TokenCreateDashboardCommand(ICarbonFilesApi api, IAnsiConsol
 
         var result = await api.Dashboard(request, cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(result));
+            return 0;
+        }
+
         var panel = new Panel(
             new Rows(
                 new Markup(""),

@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -33,6 +34,12 @@ public sealed class BucketCreateCommand(ICarbonFilesApi api, IAnsiConsole consol
         };
 
         var bucket = await api.BucketsPOST(request, cancellation);
+
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(bucket));
+            return 0;
+        }
 
         var panel = new Panel(
             $"ID:    [blue]{bucket.Id}[/]\n" +

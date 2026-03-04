@@ -26,6 +26,12 @@ public sealed class KeyListCommand(ICarbonFilesApi api, IAnsiConsole console)
     {
         var result = await api.KeysGET(settings.Limit, settings.Offset, null, null, cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(result));
+            return 0;
+        }
+
         if (result.Items.Count == 0)
         {
             console.MarkupLine("[yellow]No API keys found.[/]");

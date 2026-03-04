@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -18,6 +19,12 @@ public sealed class KeyCreateCommand(ICarbonFilesApi api, IAnsiConsole console)
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
         var result = await api.KeysPOST(new CreateApiKeyRequest { Name = settings.Name }, cancellation);
+
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(result));
+            return 0;
+        }
 
         var panel = new Panel(
             new Rows(

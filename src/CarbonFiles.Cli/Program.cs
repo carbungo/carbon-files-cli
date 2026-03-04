@@ -8,6 +8,7 @@ using CarbonFiles.Cli.Commands.Stats;
 using CarbonFiles.Cli.Commands.Token;
 using CarbonFiles.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 var services = new ServiceCollection();
@@ -93,4 +94,12 @@ app.Configure(config =>
     config.AddCommand<HealthCheckCommand>("health").WithDescription("Check API health status.");
 });
 
-return app.Run(args);
+try
+{
+    return app.Run(args);
+}
+catch (Exception ex)
+{
+    ErrorHandler.Handle(ex, AnsiConsole.Console);
+    return 1;
+}

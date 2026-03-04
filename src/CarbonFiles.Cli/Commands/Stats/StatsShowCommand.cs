@@ -12,6 +12,12 @@ public sealed class StatsShowCommand(ICarbonFilesApi api, IAnsiConsole console)
     {
         var stats = await api.Stats(cancellation);
 
+        if (settings.Json)
+        {
+            console.WriteLine(JsonOutput.Serialize(stats));
+            return 0;
+        }
+
         var grid = new Grid();
         grid.AddColumn();
         grid.AddColumn();
