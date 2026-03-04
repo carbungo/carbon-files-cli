@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Infrastructure;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
@@ -6,7 +7,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Bucket;
 
-public sealed class BucketInfoCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class BucketInfoCommand(ICarbonFilesApi api, ApiClientFactory factory, IAnsiConsole console)
     : AsyncCommand<BucketInfoCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -39,6 +40,10 @@ public sealed class BucketInfoCommand(ICarbonFilesApi api, IAnsiConsole console)
         infoTable.AddRow("Created", Formatting.FormatDate(bucket.CreatedAt.UtcDateTime));
         infoTable.AddRow("Expires", Formatting.FormatExpiry(bucket.ExpiresAt?.UtcDateTime));
 
+        var links = new LinkBuilder(factory.GetProfile(settings.Profile));
+        if (links.HasFrontend)
+            infoTable.AddRow("Link", $"[link={links.BucketUrl(bucket.Id)}]{Markup.Escape(links.BucketUrl(bucket.Id))}[/]");
+
         console.Write(infoTable);
 
         if (bucket.Files.Count > 0)
@@ -49,15 +54,19 @@ public sealed class BucketInfoCommand(ICarbonFilesApi api, IAnsiConsole console)
             fileTable.AddColumn("Path");
             fileTable.AddColumn(new TableColumn("Size").RightAligned());
             fileTable.AddColumn("Type");
-            fileTable.AddColumn("Short URL");
+            fileTable.AddColumn(links.HasFrontend ? "Link" : "Short URL");
 
             foreach (var file in bucket.Files)
             {
+                var linkCol = links.HasFrontend
+                    ? Markup.Escape(links.FileUrl(bucket.Id, file.Path))
+                    : Markup.Escape(file.ShortUrl ?? "-");
+
                 fileTable.AddRow(
                     Markup.Escape(file.Path),
                     Formatting.FormatSize(file.Size),
                     Markup.Escape(file.MimeType),
-                    Markup.Escape(file.ShortUrl ?? "-"));
+                    linkCol);
             }
 
             console.Write(fileTable);

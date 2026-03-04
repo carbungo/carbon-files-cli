@@ -1,12 +1,14 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Infrastructure;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
+using Spectre.Console.Rendering;
 
 namespace CarbonFiles.Cli.Commands.Token;
 
-public sealed class TokenCreateUploadCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class TokenCreateUploadCommand(ICarbonFilesApi api, ApiClientFactory factory, IAnsiConsole console)
     : AsyncCommand<TokenCreateUploadCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -40,14 +42,25 @@ public sealed class TokenCreateUploadCommand(ICarbonFilesApi api, IAnsiConsole c
             return 0;
         }
 
-        var panel = new Panel(
-            new Rows(
-                new Markup(""),
-                new Markup($"  Token:       [bold green]{Markup.Escape(result.Token)}[/]"),
-                new Markup($"  Bucket:      {Markup.Escape(result.BucketId)}"),
-                new Markup($"  Expires:     {Formatting.FormatExpiry(result.ExpiresAt.UtcDateTime)}"),
-                new Markup($"  Max Uploads: {(result.MaxUploads.HasValue ? result.MaxUploads.Value.ToString() : "Unlimited")}"),
-                new Markup("")))
+        var rows = new List<IRenderable>
+        {
+            new Markup(""),
+            new Markup($"  Token:       [bold green]{Markup.Escape(result.Token)}[/]"),
+            new Markup($"  Bucket:      {Markup.Escape(result.BucketId)}"),
+            new Markup($"  Expires:     {Formatting.FormatExpiry(result.ExpiresAt.UtcDateTime)}"),
+            new Markup($"  Max Uploads: {(result.MaxUploads.HasValue ? result.MaxUploads.Value.ToString() : "Unlimited")}"),
+        };
+
+        var links = new LinkBuilder(factory.GetProfile(settings.Profile));
+        if (links.HasFrontend)
+        {
+            var uploadUrl = links.UploadUrl(settings.BucketId, result.Token);
+            rows.Add(new Markup($"  Upload Link: [link={uploadUrl}]{Markup.Escape(uploadUrl)}[/]"));
+        }
+
+        rows.Add(new Markup(""));
+
+        var panel = new Panel(new Rows(rows))
         {
             Header = new PanelHeader("Upload Token Created"),
             Border = BoxBorder.Rounded,

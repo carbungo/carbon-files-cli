@@ -136,7 +136,7 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
 
         if (result is not null)
         {
-            PrintSummary([result]);
+            PrintSummary(settings.BucketId, settings.Profile, [result]);
         }
 
         return 0;
@@ -179,7 +179,7 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
             }
         });
 
-        PrintSummary(results);
+        PrintSummary(settings.BucketId, settings.Profile, results);
         return 0;
     }
 
@@ -222,24 +222,30 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
         return null;
     }
 
-    private void PrintSummary(List<UploadResult> results)
+    private void PrintSummary(string bucketId, string? profileName, List<UploadResult> results)
     {
         if (results.Count == 0) return;
+
+        var links = new LinkBuilder(factory.GetProfile(profileName));
 
         console.WriteLine();
         var table = new Table();
         table.AddColumn(new TableColumn("[bold]Path[/]"));
         table.AddColumn(new TableColumn("[bold]Size[/]").RightAligned());
         table.AddColumn(new TableColumn("[bold]Type[/]"));
-        table.AddColumn(new TableColumn("[bold]Short URL[/]"));
+        table.AddColumn(new TableColumn(links.HasFrontend ? "[bold]Link[/]" : "[bold]Short URL[/]"));
 
         foreach (var result in results)
         {
+            var linkCol = links.HasFrontend
+                ? Markup.Escape(links.FileUrl(bucketId, result.Path))
+                : Markup.Escape(result.ShortUrl ?? "-");
+
             table.AddRow(
                 Markup.Escape(result.Path),
                 Formatting.FormatSize(result.Size),
                 Markup.Escape(result.MimeType),
-                Markup.Escape(result.ShortUrl ?? "-"));
+                linkCol);
         }
 
         console.Write(table);

@@ -25,6 +25,7 @@ public sealed class ConfigShowCommand(CliConfiguration config, IAnsiConsole cons
         table.AddRow("Profile", profileName);
         table.AddRow("URL", profile.Url);
         table.AddRow("Token", profile.MaskedToken);
+        table.AddRow("Frontend", profile.FrontendUrl ?? "[dim]-[/]");
 
         console.Write(table);
         return Task.FromResult(0);

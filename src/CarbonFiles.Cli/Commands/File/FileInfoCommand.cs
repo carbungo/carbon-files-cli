@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Infrastructure;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
@@ -6,7 +7,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Files;
 
-public sealed class FileInfoCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class FileInfoCommand(ICarbonFilesApi api, ApiClientFactory factory, IAnsiConsole console)
     : AsyncCommand<FileInfoCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -40,6 +41,11 @@ public sealed class FileInfoCommand(ICarbonFilesApi api, IAnsiConsole console)
         table.AddRow("MIME Type", Markup.Escape(file.MimeType));
         table.AddRow("Short Code", Markup.Escape(file.ShortCode ?? "-"));
         table.AddRow("Short URL", Markup.Escape(file.ShortUrl ?? "-"));
+
+        var links = new LinkBuilder(factory.GetProfile(settings.Profile));
+        if (links.HasFrontend)
+            table.AddRow("Link", $"[link={links.FileUrl(settings.BucketId, file.Path)}]{Markup.Escape(links.FileUrl(settings.BucketId, file.Path))}[/]");
+
         table.AddRow("Created", Formatting.FormatDate(file.CreatedAt.UtcDateTime));
         table.AddRow("Updated", Formatting.FormatDate(file.UpdatedAt.UtcDateTime));
 

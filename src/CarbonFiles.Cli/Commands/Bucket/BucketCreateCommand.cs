@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Infrastructure;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
@@ -6,7 +7,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Bucket;
 
-public sealed class BucketCreateCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class BucketCreateCommand(ICarbonFilesApi api, ApiClientFactory factory, IAnsiConsole console)
     : AsyncCommand<BucketCreateCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -41,10 +42,15 @@ public sealed class BucketCreateCommand(ICarbonFilesApi api, IAnsiConsole consol
             return 0;
         }
 
-        var panel = new Panel(
-            $"ID:    [blue]{bucket.Id}[/]\n" +
+        var content = $"ID:    [blue]{bucket.Id}[/]\n" +
             $"Name:  {Markup.Escape(bucket.Name)}\n" +
-            $"Owner: [cyan]{Markup.Escape(bucket.Owner)}[/]")
+            $"Owner: [cyan]{Markup.Escape(bucket.Owner)}[/]";
+
+        var links = new LinkBuilder(factory.GetProfile(settings.Profile));
+        if (links.HasFrontend)
+            content += $"\nLink:  [link={links.BucketUrl(bucket.Id)}]{Markup.Escape(links.BucketUrl(bucket.Id))}[/]";
+
+        var panel = new Panel(content)
         {
             Header = new PanelHeader("[green]Bucket Created[/]"),
         };

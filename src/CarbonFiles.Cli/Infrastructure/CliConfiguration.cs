@@ -49,9 +49,23 @@ public sealed class CliConfiguration
         File.WriteAllText(_filePath, json);
     }
 
-    public void SetProfile(string name, string url, string token)
+    public void SetProfile(string name, string url, string token, string? frontendUrl = null)
     {
-        Profiles[name] = new Profile { Url = url.TrimEnd('/'), Token = token };
+        var existing = Profiles.GetValueOrDefault(name);
+        Profiles[name] = new Profile
+        {
+            Url = url.TrimEnd('/'),
+            Token = token,
+            FrontendUrl = (frontendUrl?.TrimEnd('/') ?? existing?.FrontendUrl),
+        };
+    }
+
+    public void UpdateFrontendUrl(string name, string? frontendUrl)
+    {
+        if (Profiles.TryGetValue(name, out var profile))
+        {
+            profile.FrontendUrl = frontendUrl?.TrimEnd('/');
+        }
     }
 
     public Profile? GetActiveProfile()
@@ -62,6 +76,7 @@ public sealed class Profile
 {
     public string Url { get; set; } = string.Empty;
     public string Token { get; set; } = string.Empty;
+    public string? FrontendUrl { get; set; }
 
     [JsonIgnore]
     public string MaskedToken

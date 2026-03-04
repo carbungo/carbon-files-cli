@@ -14,8 +14,11 @@ public class BucketCreateCommandTests
     private static (CommandAppTester app, ICarbonFilesApi api) CreateApp()
     {
         var api = Substitute.For<ICarbonFilesApi>();
+        var config = new CliConfiguration();
+        config.SetProfile("default", "http://localhost", "test-token");
         var services = new ServiceCollection();
         services.AddSingleton(api);
+        services.AddSingleton(new ApiClientFactory(config));
         var registrar = new TypeRegistrar(services);
         var app = new CommandAppTester(registrar);
         app.Configure(c => c.AddCommand<BucketCreateCommand>("create"));
