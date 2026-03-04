@@ -32,6 +32,7 @@ app.Configure(config =>
         b.AddCommand<BucketUpdateCommand>("update").WithDescription("Update a bucket.");
         b.AddCommand<BucketDeleteCommand>("delete").WithDescription("Delete a bucket.");
         b.AddCommand<BucketDownloadCommand>("download").WithDescription("Download bucket as ZIP.");
+        b.AddCommand<BucketWatchCommand>("watch").WithDescription("Watch bucket for live changes.");
     });
 
     config.AddBranch("file", b =>
