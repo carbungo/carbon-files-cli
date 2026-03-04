@@ -1,3 +1,4 @@
+using CarbonFiles.Cli.Commands.Bucket;
 using CarbonFiles.Cli.Commands.Config;
 using CarbonFiles.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,14 @@ app.Configure(config =>
 {
     config.SetApplicationName("cf");
     config.SetApplicationVersion("0.1.0");
+
+    config.AddBranch("bucket", b =>
+    {
+        b.SetDescription("Manage buckets.");
+        b.AddCommand<BucketListCommand>("list").WithDescription("List all buckets.");
+        b.AddCommand<BucketCreateCommand>("create").WithDescription("Create a new bucket.");
+        b.AddCommand<BucketInfoCommand>("info").WithDescription("Show bucket details.");
+    });
 
     config.AddBranch("config", b =>
     {
