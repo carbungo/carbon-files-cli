@@ -23,6 +23,9 @@ app.Configure(config =>
         b.AddCommand<BucketListCommand>("list").WithDescription("List all buckets.");
         b.AddCommand<BucketCreateCommand>("create").WithDescription("Create a new bucket.");
         b.AddCommand<BucketInfoCommand>("info").WithDescription("Show bucket details.");
+        b.AddCommand<BucketUpdateCommand>("update").WithDescription("Update a bucket.");
+        b.AddCommand<BucketDeleteCommand>("delete").WithDescription("Delete a bucket.");
+        b.AddCommand<BucketDownloadCommand>("download").WithDescription("Download bucket as ZIP.");
     });
 
     config.AddBranch("config", b =>
