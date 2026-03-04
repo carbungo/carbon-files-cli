@@ -1,5 +1,6 @@
 using CarbonFiles.Cli.Commands.Bucket;
 using CarbonFiles.Cli.Commands.Config;
+using CarbonFiles.Cli.Commands.Files;
 using CarbonFiles.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
@@ -26,6 +27,14 @@ app.Configure(config =>
         b.AddCommand<BucketUpdateCommand>("update").WithDescription("Update a bucket.");
         b.AddCommand<BucketDeleteCommand>("delete").WithDescription("Delete a bucket.");
         b.AddCommand<BucketDownloadCommand>("download").WithDescription("Download bucket as ZIP.");
+    });
+
+    config.AddBranch("file", b =>
+    {
+        b.SetDescription("Manage files in buckets.");
+        b.AddCommand<FileListCommand>("list").WithDescription("List files in a bucket.");
+        b.AddCommand<FileInfoCommand>("info").WithDescription("Show file details.");
+        b.AddCommand<FileDeleteCommand>("delete").WithDescription("Delete a file.");
     });
 
     config.AddBranch("config", b =>
