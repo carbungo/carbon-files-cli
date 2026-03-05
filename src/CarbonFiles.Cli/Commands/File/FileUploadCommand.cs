@@ -80,7 +80,8 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
 
     internal List<(string LocalPath, string RemotePath)> ResolveFilePaths(Settings settings)
     {
-        var baseDir = Path.GetFullPath(settings.BaseDir ?? Directory.GetCurrentDirectory());
+        var explicitBaseDir = settings.BaseDir != null ? Path.GetFullPath(settings.BaseDir) : null;
+        var defaultFileBase = Path.GetFullPath(Directory.GetCurrentDirectory());
         var files = new List<(string LocalPath, string RemotePath)>();
 
         foreach (var path in settings.Paths)
@@ -94,6 +95,9 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
                 }
 
                 var dirFullPath = Path.GetFullPath(path);
+                // When no --base-dir is given, use the parent of the specified directory so
+                // that paths are preserved: /tmp/docs/ → docs/file.txt (not just file.txt)
+                var baseDir = explicitBaseDir ?? Directory.GetParent(dirFullPath)?.FullName ?? dirFullPath;
                 foreach (var file in Directory.EnumerateFiles(dirFullPath, "*", SearchOption.AllDirectories))
                 {
                     var remotePath = ComputeRemotePath(file, baseDir, settings.Flat);
@@ -103,6 +107,7 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
             else if (File.Exists(path))
             {
                 var fullPath = Path.GetFullPath(path);
+                var baseDir = explicitBaseDir ?? defaultFileBase;
                 var remotePath = ComputeRemotePath(fullPath, baseDir, settings.Flat);
                 files.Add((fullPath, remotePath));
             }

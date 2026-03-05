@@ -47,6 +47,7 @@ app.Configure(config =>
         b.AddCommand<BucketDeleteCommand>("delete").WithDescription("Delete a bucket.");
         b.AddCommand<BucketDownloadCommand>("download").WithDescription("Download bucket as ZIP.");
         b.AddCommand<BucketWatchCommand>("watch").WithDescription("Watch bucket for live changes.");
+        b.AddCommand<BucketSummaryCommand>("summary").WithDescription("Show plain-text bucket summary.");
     });
 
     config.AddBranch("file", b =>

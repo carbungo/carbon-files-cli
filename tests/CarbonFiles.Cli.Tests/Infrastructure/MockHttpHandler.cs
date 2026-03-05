@@ -34,6 +34,17 @@ public class MockHttpHandler : HttpMessageHandler
         ));
     }
 
+    public void SetupText(HttpMethod method, string urlPattern, string responseBody, HttpStatusCode status = HttpStatusCode.OK)
+    {
+        _handlers.Add((
+            req => req.Method == method && req.RequestUri?.PathAndQuery.Contains(urlPattern) == true,
+            _ => new HttpResponseMessage(status)
+            {
+                Content = new StringContent(responseBody, System.Text.Encoding.UTF8, "text/plain")
+            }
+        ));
+    }
+
     public void SetupDelete(string urlPattern)
     {
         _handlers.Add((

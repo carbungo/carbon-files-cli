@@ -1,5 +1,9 @@
 using CarbonFiles.Cli.Commands.Files;
+using CarbonFiles.Cli.Infrastructure;
 using FluentAssertions;
+using NSubstitute;
+using Spectre.Console;
+using IO = System.IO;
 
 namespace CarbonFiles.Cli.Tests.Commands.File;
 
@@ -98,5 +102,118 @@ public class FileUploadCommandTests
     {
         var result = FileUploadCommand.ComputeRemotePath(fullPath, baseDir, flat);
         result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ResolveFilePaths_Directory_PreservesRelativePaths()
+    {
+        // Arrange: create a temp directory structure
+        var tempRoot = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var docsDir = Path.Combine(tempRoot, "docs");
+        var subDir = Path.Combine(docsDir, "subdir");
+        Directory.CreateDirectory(subDir);
+        IO.File.WriteAllText(Path.Combine(docsDir, "doc1.txt"), "content");
+        IO.File.WriteAllText(Path.Combine(subDir, "doc2.txt"), "content");
+
+        try
+        {
+            var console = Substitute.For<IAnsiConsole>();
+            var config = new CliConfiguration();
+            config.SetProfile("default", "http://localhost", "token");
+            var factory = new ApiClientFactory(config);
+            var command = new FileUploadCommand(factory, console);
+
+            var settings = new FileUploadCommand.Settings
+            {
+                BucketId = "bucket1",
+                Paths = [docsDir],
+                Recursive = true,
+            };
+
+            var files = command.ResolveFilePaths(settings);
+
+            // Remote paths should be docs/doc1.txt and docs/subdir/doc2.txt,
+            // not just doc1.txt and doc2.txt
+            files.Should().HaveCount(2);
+            files.Select(f => f.RemotePath).Should().Contain("docs/doc1.txt");
+            files.Select(f => f.RemotePath).Should().Contain("docs/subdir/doc2.txt");
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ResolveFilePaths_Directory_WithExplicitBaseDir_UsesBaseDir()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var docsDir = Path.Combine(tempRoot, "docs");
+        Directory.CreateDirectory(docsDir);
+        IO.File.WriteAllText(Path.Combine(docsDir, "doc1.txt"), "content");
+
+        try
+        {
+            var console = Substitute.For<IAnsiConsole>();
+            var config = new CliConfiguration();
+            config.SetProfile("default", "http://localhost", "token");
+            var factory = new ApiClientFactory(config);
+            var command = new FileUploadCommand(factory, console);
+
+            var settings = new FileUploadCommand.Settings
+            {
+                BucketId = "bucket1",
+                Paths = [docsDir],
+                Recursive = true,
+                BaseDir = docsDir, // explicit base-dir = the docs dir itself → file at root
+            };
+
+            var files = command.ResolveFilePaths(settings);
+
+            files.Should().ContainSingle();
+            files[0].RemotePath.Should().Be("doc1.txt");
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ResolveFilePaths_Directory_FlatMode_StripsAllPaths()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var docsDir = Path.Combine(tempRoot, "docs");
+        var subDir = Path.Combine(docsDir, "sub");
+        Directory.CreateDirectory(subDir);
+        IO.File.WriteAllText(Path.Combine(docsDir, "doc1.txt"), "content");
+        IO.File.WriteAllText(Path.Combine(subDir, "doc2.txt"), "content");
+
+        try
+        {
+            var console = Substitute.For<IAnsiConsole>();
+            var config = new CliConfiguration();
+            config.SetProfile("default", "http://localhost", "token");
+            var factory = new ApiClientFactory(config);
+            var command = new FileUploadCommand(factory, console);
+
+            var settings = new FileUploadCommand.Settings
+            {
+                BucketId = "bucket1",
+                Paths = [docsDir],
+                Recursive = true,
+                Flat = true,
+            };
+
+            var files = command.ResolveFilePaths(settings);
+
+            files.Should().HaveCount(2);
+            files.Select(f => f.RemotePath).Should().Contain("doc1.txt");
+            files.Select(f => f.RemotePath).Should().Contain("doc2.txt");
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
     }
 }
