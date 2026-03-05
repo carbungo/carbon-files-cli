@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Infrastructure;
+using CarbonFiles.Cli.Rendering;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -29,7 +30,7 @@ public sealed class ShortResolveCommand(ApiClientFactory factory, IAnsiConsole c
             or System.Net.HttpStatusCode.MovedPermanently or System.Net.HttpStatusCode.TemporaryRedirect)
         {
             var location = response.Headers.Location?.ToString();
-            console.MarkupLine($"[green]Redirects to:[/] {Markup.Escape(location ?? "(unknown)")}");
+            console.MarkupLine($"{Theme.Globe} Points to -> {Markup.Escape(location ?? "(unknown)")}");
         }
         else if ((int)response.StatusCode == 404)
         {

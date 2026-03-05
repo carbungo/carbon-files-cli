@@ -24,34 +24,34 @@ public sealed class BucketWatchCommand(ApiClientFactory factory, IAnsiConsole co
 
         events.OnFileCreated((bucketId, file) =>
         {
-            console.MarkupLine($"[green]+[/] [green]FileCreated[/]: {Markup.Escape(file.Path)} ({Formatting.FormatSize(file.Size)})");
+            console.MarkupLine($"{Theme.Sparkles} [green]FileCreated[/]: {Markup.Escape(file.Path)} ({Formatting.FormatSize(file.Size)})");
             return Task.CompletedTask;
         });
         events.OnFileUpdated((bucketId, file) =>
         {
-            console.MarkupLine($"[yellow]~[/] [yellow]FileUpdated[/]: {Markup.Escape(file.Path)} ({Formatting.FormatSize(file.Size)})");
+            console.MarkupLine($"{Theme.HighVoltage} [yellow]FileUpdated[/]: {Markup.Escape(file.Path)} ({Formatting.FormatSize(file.Size)})");
             return Task.CompletedTask;
         });
         events.OnFileDeleted((bucketId, path) =>
         {
-            console.MarkupLine($"[red]-[/] [red]FileDeleted[/]: {Markup.Escape(path)}");
+            console.MarkupLine($"{Theme.Skull} [red]FileDeleted[/]: {Markup.Escape(path)}");
             return Task.CompletedTask;
         });
         events.OnBucketUpdated((bucketId, changes) =>
         {
-            console.MarkupLine($"[blue]B[/] [blue]BucketUpdated[/]: {Markup.Escape(bucketId)}");
+            console.MarkupLine($"{Theme.Gear} [blue]BucketUpdated[/]: {Markup.Escape(bucketId)}");
             return Task.CompletedTask;
         });
         events.OnBucketDeleted(bucketId =>
         {
-            console.MarkupLine($"[red]X[/] [red]BucketDeleted[/]: {Markup.Escape(bucketId)}");
+            console.MarkupLine($"{Theme.Collision} [red]BucketDeleted[/]: {Markup.Escape(bucketId)}");
             return Task.CompletedTask;
         });
 
         await events.ConnectAsync(cancellation);
         await events.SubscribeToBucketAsync(settings.Id, cancellation);
 
-        console.MarkupLine($"[bold]Watching bucket {Markup.Escape(settings.Id)} for changes...[/]");
+        console.MarkupLine($"{Theme.Cyclone} [bold]Watching bucket {Markup.Escape(settings.Id)} for changes...[/]");
         console.MarkupLine("[dim]Press Ctrl+C to stop.[/]");
 
         try

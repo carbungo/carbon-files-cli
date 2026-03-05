@@ -87,7 +87,7 @@ public class KeyCommandTests
         var result = app.Run("cmd", "cf4_abcd1234", "--yes");
 
         result.ExitCode.Should().Be(0);
-        result.Output.Should().Contain("Deleted");
+        result.Output.Should().Contain("Poof");
         handler.Requests.Should().ContainSingle(r => r.Method == HttpMethod.Delete);
     }
 

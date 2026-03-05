@@ -33,7 +33,6 @@ public sealed class UpdateCommand(IAnsiConsole console) : AsyncCommand<UpdateCom
         var currentVersion = BuildInfo.Version;
 
         console.MarkupLine($"[dim]Current version: {Markup.Escape(BuildInfo.InformationalVersion)}[/]");
-        console.MarkupLine("[dim]Checking for updates...[/]");
 
         using var http = new HttpClient();
         http.DefaultRequestHeaders.UserAgent.ParseAdd($"cf-cli/{currentVersion}");
@@ -72,11 +71,11 @@ public sealed class UpdateCommand(IAnsiConsole console) : AsyncCommand<UpdateCom
 
         if (latest <= current)
         {
-            console.MarkupLine("[green]Already up to date.[/]");
+            console.MarkupLine($"{Theme.Crab} Already on latest.");
             return 0;
         }
 
-        console.MarkupLine($"[bold]New version available:[/] [green]{Markup.Escape(tagName)}[/]");
+        console.MarkupLine($"{Theme.Sparkles} [bold]{Markup.Escape(tagName)} dropped![/]");
 
         if (settings.CheckOnly)
         {
@@ -184,7 +183,7 @@ public sealed class UpdateCommand(IAnsiConsole console) : AsyncCommand<UpdateCom
                 File.Move(tempPath, exePath, overwrite: true);
             }
 
-            console.MarkupLine($"[green]Updated to {Markup.Escape(tagName)}.[/]");
+            console.MarkupLine($"{Theme.PartyPopper} Updated to [bold green]{Markup.Escape(tagName)}[/]!");
             return 0;
         }
         catch (Exception ex)

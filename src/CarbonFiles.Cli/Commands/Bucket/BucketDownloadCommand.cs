@@ -42,7 +42,7 @@ public sealed class BucketDownloadCommand(CarbonFilesClient client, IAnsiConsole
             }
         });
 
-        console.MarkupLine($"[green]Downloaded to {Markup.Escape(outputPath)}[/]");
+        console.MarkupLine($"{Theme.InboxTray} Saved to [bold]{Markup.Escape(outputPath)}[/]");
         return 0;
     }
 }

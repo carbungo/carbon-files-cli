@@ -19,13 +19,15 @@ public sealed class KeyCreateCommand(CarbonFilesClient client, IAnsiConsole cons
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var result = await client.Keys.CreateAsync(new CreateApiKeyRequest { Name = settings.Name }, cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(result));
+            var r = await client.Keys.CreateAsync(new CreateApiKeyRequest { Name = settings.Name }, cancellation);
+            console.WriteLine(JsonOutput.Serialize(r));
             return 0;
         }
+
+        var result = await console.Status().StartAsync($"{Theme.Locked} Creating API key...", async _ =>
+            await client.Keys.CreateAsync(new CreateApiKeyRequest { Name = settings.Name }, cancellation));
 
         var panel = new Panel(
             new Rows(
@@ -37,7 +39,7 @@ public sealed class KeyCreateCommand(CarbonFilesClient client, IAnsiConsole cons
                 new Markup("  [bold yellow]\u26a0 Save this key \u2014 it won\u2019t be shown again![/]"),
                 new Markup("")))
         {
-            Header = new PanelHeader("API Key Created"),
+            Header = new PanelHeader($"{Theme.Locked} API Key Created"),
             Border = BoxBorder.Rounded,
         };
 

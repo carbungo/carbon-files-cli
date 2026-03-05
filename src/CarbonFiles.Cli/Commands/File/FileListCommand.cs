@@ -49,21 +49,23 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
             Offset = settings.Offset,
         };
 
-        var result = await client.Buckets[settings.BucketId].Files.ListAsync(pagination, cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(result));
+            var r = await client.Buckets[settings.BucketId].Files.ListAsync(pagination, cancellation);
+            console.WriteLine(JsonOutput.Serialize(r));
             return 0;
         }
+
+        var result = await console.Status().StartAsync($"{Theme.MagnifyingGlass} Fetching files...", async _ =>
+            await client.Buckets[settings.BucketId].Files.ListAsync(pagination, cancellation));
 
         if (result.Items.Count == 0)
         {
-            console.MarkupLine("[yellow]No files found.[/]");
+            console.MarkupLine($"{Theme.Package} No files found.");
             return 0;
         }
 
-        var table = new Table();
+        var table = Theme.CreateTable();
         table.AddColumn(new TableColumn("[bold]Path[/]"));
         table.AddColumn(new TableColumn("[bold]Size[/]").RightAligned());
         table.AddColumn(new TableColumn("[bold]Type[/]"));
@@ -92,24 +94,27 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
             Offset = settings.Offset,
         };
 
-        var result = await client.Buckets[settings.BucketId].Files.ListDirectoryAsync(
-            settings.Path, pagination, cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(result));
+            var r = await client.Buckets[settings.BucketId].Files.ListDirectoryAsync(
+                settings.Path, pagination, cancellation);
+            console.WriteLine(JsonOutput.Serialize(r));
             return 0;
         }
+
+        var result = await console.Status().StartAsync($"{Theme.MagnifyingGlass} Fetching files...", async _ =>
+            await client.Buckets[settings.BucketId].Files.ListDirectoryAsync(
+                settings.Path, pagination, cancellation));
 
         var totalItems = result.Folders.Count + result.Files.Count;
 
         if (totalItems == 0)
         {
-            console.MarkupLine("[yellow]No files found.[/]");
+            console.MarkupLine($"{Theme.Package} No files found.");
             return 0;
         }
 
-        var table = new Table();
+        var table = Theme.CreateTable();
         table.AddColumn(new TableColumn("[bold]Path[/]"));
         table.AddColumn(new TableColumn("[bold]Size[/]").RightAligned());
         table.AddColumn(new TableColumn("[bold]Type[/]"));

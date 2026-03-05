@@ -10,21 +10,23 @@ public sealed class HealthCheckCommand(CarbonFilesClient client, IAnsiConsole co
 {
     public override async Task<int> ExecuteAsync(CommandContext context, GlobalSettings settings, CancellationToken cancellation)
     {
-        var health = await client.Health.CheckAsync(cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(health));
+            var h = await client.Health.CheckAsync(cancellation);
+            console.WriteLine(JsonOutput.Serialize(h));
             return 0;
         }
 
+        var health = await console.Status().StartAsync($"{Theme.GreenHeart} Checking vitals...", async _ =>
+            await client.Health.CheckAsync(cancellation));
+
         if (string.Equals(health.Status, "Healthy", StringComparison.OrdinalIgnoreCase))
         {
-            console.MarkupLine("[bold green]Healthy[/]");
+            console.MarkupLine($"{Theme.GreenHeart} [bold green]All systems go[/]");
         }
         else
         {
-            console.MarkupLine($"[bold red]{Markup.Escape(health.Status)}[/]");
+            console.MarkupLine($"{Theme.Collision} [bold red]{Markup.Escape(health.Status)}[/]");
         }
 
         var uptime = TimeSpan.FromSeconds(health.UptimeSeconds);

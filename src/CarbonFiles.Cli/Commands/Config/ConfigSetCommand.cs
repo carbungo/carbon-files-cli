@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Infrastructure;
+using CarbonFiles.Cli.Rendering;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -39,7 +40,7 @@ public sealed class ConfigSetCommand(CliConfiguration config, IAnsiConsole conso
             config.UpdateFrontendUrl(profileName, settings.FrontendUrl);
             config.Save();
 
-            console.MarkupLine($"[green]Frontend URL updated for profile '{profileName}'.[/]");
+            console.MarkupLine($"{Theme.Gear} Frontend URL updated for profile [bold]'{profileName}'[/].");
             console.MarkupLine($"  Frontend: {settings.FrontendUrl.TrimEnd('/')}");
             return Task.FromResult(0);
         }
@@ -54,7 +55,7 @@ public sealed class ConfigSetCommand(CliConfiguration config, IAnsiConsole conso
         config.Save();
 
         var profile = config.Profiles[profileName];
-        console.MarkupLine($"[green]Profile '{profileName}' saved.[/]");
+        console.MarkupLine($"{Theme.Gear} Profile [bold]\"{profileName}\"[/] locked in.");
         console.MarkupLine($"  URL:      {profile.Url}");
         console.MarkupLine($"  Token:    {profile.MaskedToken}");
         if (profile.FrontendUrl is not null)

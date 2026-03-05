@@ -1,4 +1,5 @@
 using CarbonFiles.Cli.Infrastructure;
+using CarbonFiles.Cli.Rendering;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -15,7 +16,7 @@ public sealed class ConfigProfilesCommand(CliConfiguration config, IAnsiConsole 
             return Task.FromResult(0);
         }
 
-        var table = new Table();
+        var table = Theme.CreateTable();
         table.AddColumn("Name");
         table.AddColumn("URL");
         table.AddColumn("Token");

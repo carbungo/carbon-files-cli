@@ -20,6 +20,9 @@ public sealed class VersionCommand(IAnsiConsole console) : AsyncCommand<GlobalSe
             return Task.FromResult(0);
         }
 
+        console.MarkupLine($"[bold blue]{Emoji.Known.Cloud} CarbonFiles[/] [dim]v{BuildInfo.InformationalVersion}[/]");
+        console.WriteLine();
+
         var grid = new Grid();
         grid.AddColumn();
         grid.AddColumn();

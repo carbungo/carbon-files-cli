@@ -21,7 +21,7 @@ public class BucketUpdateCommandTests
         var result = app.Run("cmd", "abc123", "--name", "new-name");
 
         result.ExitCode.Should().Be(0);
-        result.Output.Should().Contain("Bucket Updated");
+        result.Output.Should().Contain("Bucket updated");
         result.Output.Should().Contain("abc123");
         result.Output.Should().Contain("new-name");
     }

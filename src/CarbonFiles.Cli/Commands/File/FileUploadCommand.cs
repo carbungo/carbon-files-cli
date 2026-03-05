@@ -202,7 +202,7 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
         var links = new LinkBuilder(factory.GetProfile(profileName));
 
         console.WriteLine();
-        var table = new Table();
+        var table = Theme.CreateTable();
         table.AddColumn(new TableColumn("[bold]Path[/]"));
         table.AddColumn(new TableColumn("[bold]Size[/]").RightAligned());
         table.AddColumn(new TableColumn("[bold]Type[/]"));
@@ -224,6 +224,13 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
         }
 
         console.Write(table);
-        console.MarkupLine($"[green]Uploaded {results.Count} file(s).[/]");
+
+        var dedupCount = results.Count(r => r.Deduplicated);
+        var totalSize = results.Sum(r => r.Size);
+        var msg = $"{Theme.Package} {results.Count} file(s) landed";
+        if (dedupCount > 0)
+            msg += $" [dim]({dedupCount} deduped)[/]";
+        msg += $" [dim]({Formatting.FormatSize(totalSize)})[/]";
+        console.MarkupLine(msg);
     }
 }

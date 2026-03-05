@@ -15,7 +15,7 @@ public class ShortCommandTests
         var result = app.Run("cmd", "abc123", "--yes");
 
         result.ExitCode.Should().Be(0);
-        result.Output.Should().Contain("Deleted");
+        result.Output.Should().Contain("Poof");
         handler.Requests.Should().ContainSingle(r => r.Method == HttpMethod.Delete);
     }
 

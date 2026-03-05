@@ -10,13 +10,15 @@ public sealed class StatsShowCommand(CarbonFilesClient client, IAnsiConsole cons
 {
     public override async Task<int> ExecuteAsync(CommandContext context, GlobalSettings settings, CancellationToken cancellation)
     {
-        var stats = await client.Stats.GetAsync(cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(stats));
+            var s = await client.Stats.GetAsync(cancellation);
+            console.WriteLine(JsonOutput.Serialize(s));
             return 0;
         }
+
+        var stats = await console.Status().StartAsync($"{Theme.MagnifyingGlass} Fetching stats...", async _ =>
+            await client.Stats.GetAsync(cancellation));
 
         var grid = new Grid();
         grid.AddColumn();
@@ -37,8 +39,7 @@ public sealed class StatsShowCommand(CarbonFilesClient client, IAnsiConsole cons
         {
             console.WriteLine();
 
-            var table = new Table()
-                .Border(TableBorder.Rounded)
+            var table = Theme.CreateTable()
                 .Title("[bold]Storage by Owner[/]");
 
             table.AddColumn("[bold]Owner[/]");

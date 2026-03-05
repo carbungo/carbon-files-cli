@@ -15,7 +15,7 @@ public class FileDeleteCommandTests
         var result = app.Run("cmd", "bucket1", "docs/readme.txt", "--yes");
 
         result.ExitCode.Should().Be(0);
-        result.Output.Should().Contain("Deleted");
+        result.Output.Should().Contain("Poof");
         handler.Requests.Should().ContainSingle(r => r.Method == HttpMethod.Delete);
     }
 

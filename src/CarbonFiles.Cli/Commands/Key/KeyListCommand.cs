@@ -31,21 +31,23 @@ public sealed class KeyListCommand(CarbonFilesClient client, IAnsiConsole consol
             Offset = settings.Offset,
         };
 
-        var result = await client.Keys.ListAsync(pagination, cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(result));
+            var r = await client.Keys.ListAsync(pagination, cancellation);
+            console.WriteLine(JsonOutput.Serialize(r));
             return 0;
         }
+
+        var result = await console.Status().StartAsync($"{Theme.MagnifyingGlass} Fetching keys...", async _ =>
+            await client.Keys.ListAsync(pagination, cancellation));
 
         if (result.Items.Count == 0)
         {
-            console.MarkupLine("[yellow]No API keys found.[/]");
+            console.MarkupLine($"{Theme.Package} No API keys found.");
             return 0;
         }
 
-        var table = new Table();
+        var table = Theme.CreateTable();
         table.AddColumn(new TableColumn("[bold blue]Prefix[/]"));
         table.AddColumn(new TableColumn("[bold]Name[/]"));
         table.AddColumn(new TableColumn("[bold]Created[/]"));

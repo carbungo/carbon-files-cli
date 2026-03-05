@@ -24,13 +24,15 @@ public sealed class TokenCreateDashboardCommand(CarbonFilesClient client, IAnsiC
             ExpiresIn = settings.Expires,
         };
 
-        var result = await client.Dashboard.CreateTokenAsync(request, cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(result));
+            var r = await client.Dashboard.CreateTokenAsync(request, cancellation);
+            console.WriteLine(JsonOutput.Serialize(r));
             return 0;
         }
+
+        var result = await console.Status().StartAsync($"{Theme.Rocket} Creating dashboard token...", async _ =>
+            await client.Dashboard.CreateTokenAsync(request, cancellation));
 
         var panel = new Panel(
             new Rows(
@@ -39,7 +41,7 @@ public sealed class TokenCreateDashboardCommand(CarbonFilesClient client, IAnsiC
                 new Markup($"  Expires: {Formatting.FormatExpiry(result.ExpiresAt.UtcDateTime)}"),
                 new Markup("")))
         {
-            Header = new PanelHeader("Dashboard Token Created"),
+            Header = new PanelHeader($"{Theme.Rocket} Dashboard Token Created"),
             Border = BoxBorder.Rounded,
         };
 

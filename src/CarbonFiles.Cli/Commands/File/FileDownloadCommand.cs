@@ -52,7 +52,7 @@ public sealed class FileDownloadCommand(CarbonFilesClient client, IAnsiConsole c
         });
 
         var fileInfo = new FileInfo(outputPath);
-        console.MarkupLine($"[green]Downloaded to {Markup.Escape(outputPath)} ({Formatting.FormatSize(fileInfo.Length)})[/]");
+        console.MarkupLine($"{Theme.InboxTray} Saved to [bold]{Markup.Escape(outputPath)}[/] ({Formatting.FormatSize(fileInfo.Length)})");
         return 0;
     }
 }

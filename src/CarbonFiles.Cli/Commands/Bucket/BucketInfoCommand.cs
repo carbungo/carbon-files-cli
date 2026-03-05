@@ -19,13 +19,15 @@ public sealed class BucketInfoCommand(CarbonFilesClient client, ApiClientFactory
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var bucket = await client.Buckets[settings.Id].GetAsync(cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(bucket));
+            var b = await client.Buckets[settings.Id].GetAsync(cancellation);
+            console.WriteLine(JsonOutput.Serialize(b));
             return 0;
         }
+
+        var bucket = await console.Status().StartAsync($"{Theme.MagnifyingGlass} Fetching bucket info...", async _ =>
+            await client.Buckets[settings.Id].GetAsync(cancellation));
 
         var infoTable = new Table().NoBorder().HideHeaders();
         infoTable.AddColumn("Property");
@@ -37,7 +39,13 @@ public sealed class BucketInfoCommand(CarbonFilesClient client, ApiClientFactory
         infoTable.AddRow("Description", Markup.Escape(bucket.Description ?? "-"));
         infoTable.AddRow("Files", bucket.FileCount.ToString());
         infoTable.AddRow("Total Size", Formatting.FormatSize(bucket.TotalSize));
-        infoTable.AddRow("Unique Content", $"{bucket.UniqueContentCount} ({Formatting.FormatSize(bucket.UniqueContentSize)})");
+
+        var dedupSaved = bucket.TotalSize - bucket.UniqueContentSize;
+        var dedupInfo = $"{bucket.UniqueContentCount} ({Formatting.FormatSize(bucket.UniqueContentSize)})";
+        if (dedupSaved > 0)
+            dedupInfo += $" [green]— saved {Formatting.FormatSize(dedupSaved)} via dedup[/]";
+        infoTable.AddRow("Unique Content", dedupInfo);
+
         infoTable.AddRow("Created", Formatting.FormatDate(bucket.CreatedAt.UtcDateTime));
         infoTable.AddRow("Expires", Formatting.FormatExpiry(bucket.ExpiresAt?.UtcDateTime));
 
@@ -51,7 +59,7 @@ public sealed class BucketInfoCommand(CarbonFilesClient client, ApiClientFactory
         {
             console.WriteLine();
 
-            var fileTable = new Table();
+            var fileTable = Theme.CreateTable();
             fileTable.AddColumn("Path");
             fileTable.AddColumn(new TableColumn("Size").RightAligned());
             fileTable.AddColumn("Type");

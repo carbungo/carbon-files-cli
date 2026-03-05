@@ -35,25 +35,27 @@ public sealed class BucketCreateCommand(CarbonFilesClient client, ApiClientFacto
             ExpiresIn = settings.Expires,
         };
 
-        var bucket = await client.Buckets.CreateAsync(request, cancellation);
-
         if (settings.Json)
         {
+            var bucket = await client.Buckets.CreateAsync(request, cancellation);
             console.WriteLine(JsonOutput.Serialize(bucket));
             return 0;
         }
 
-        var content = $"ID:    [blue]{bucket.Id}[/]\n" +
-            $"Name:  {Markup.Escape(bucket.Name)}\n" +
-            $"Owner: [cyan]{Markup.Escape(bucket.Owner)}[/]";
+        var result = await console.Status().StartAsync($"{Theme.Sparkles} Setting up bucket...", async _ =>
+            await client.Buckets.CreateAsync(request, cancellation));
+
+        var content = $"ID:    [blue]{result.Id}[/]\n" +
+            $"Name:  {Markup.Escape(result.Name)}\n" +
+            $"Owner: [cyan]{Markup.Escape(result.Owner)}[/]";
 
         var links = new LinkBuilder(factory.GetProfile(settings.Profile));
         if (links.HasFrontend)
-            content += $"\nLink:  [link={links.BucketUrl(bucket.Id)}]{Markup.Escape(links.BucketUrl(bucket.Id))}[/]";
+            content += $"\nLink:  [link={links.BucketUrl(result.Id)}]{Markup.Escape(links.BucketUrl(result.Id))}[/]";
 
         var panel = new Panel(content)
         {
-            Header = new PanelHeader("[green]Bucket Created[/]"),
+            Header = new PanelHeader($"[green]{Theme.Fire} Bucket \"{Markup.Escape(result.Name)}\" is live![/]"),
         };
 
         console.Write(panel);

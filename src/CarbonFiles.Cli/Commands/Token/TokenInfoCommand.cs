@@ -12,15 +12,17 @@ public sealed class TokenInfoCommand(CarbonFilesClient client, IAnsiConsole cons
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var info = await client.Dashboard.GetCurrentUserAsync(cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(info));
+            var i = await client.Dashboard.GetCurrentUserAsync(cancellation);
+            console.WriteLine(JsonOutput.Serialize(i));
             return 0;
         }
 
-        var table = new Table { Border = TableBorder.Rounded };
+        var info = await console.Status().StartAsync($"{Theme.MagnifyingGlass} Fetching token info...", async _ =>
+            await client.Dashboard.GetCurrentUserAsync(cancellation));
+
+        var table = Theme.CreateTable();
         table.AddColumn("Property");
         table.AddColumn("Value");
 

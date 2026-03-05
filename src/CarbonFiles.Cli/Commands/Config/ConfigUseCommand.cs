@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Infrastructure;
+using CarbonFiles.Cli.Rendering;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -26,7 +27,7 @@ public sealed class ConfigUseCommand(CliConfiguration config, IAnsiConsole conso
         config.ActiveProfile = settings.Name;
         config.Save();
 
-        console.MarkupLine($"[green]Switched to profile '{settings.Name}'.[/]");
+        console.MarkupLine($"{Theme.Sync} Now using [bold]\"{settings.Name}\"[/].");
         return Task.FromResult(0);
     }
 }

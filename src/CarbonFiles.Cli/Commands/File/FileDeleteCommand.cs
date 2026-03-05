@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -41,9 +42,10 @@ public sealed class FileDeleteCommand(CarbonFilesClient client, IAnsiConsole con
             }
         }
 
-        await client.Buckets[settings.BucketId].Files[settings.Path].DeleteAsync(cancellation);
+        await console.Status().StartAsync($"{Theme.Skull} Deleting...", async _ =>
+            await client.Buckets[settings.BucketId].Files[settings.Path].DeleteAsync(cancellation));
 
-        console.MarkupLine($"[green]Deleted file '{Markup.Escape(settings.Path)}' from bucket '{Markup.Escape(settings.BucketId)}'.[/]");
+        console.MarkupLine($"{Theme.Skull} Poof. [bold]'{Markup.Escape(settings.Path)}'[/] is gone.");
 
         return 0;
     }

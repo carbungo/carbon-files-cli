@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -37,9 +38,10 @@ public sealed class KeyDeleteCommand(CarbonFilesClient client, IAnsiConsole cons
             }
         }
 
-        await client.Keys[settings.Prefix].RevokeAsync(cancellation);
+        await console.Status().StartAsync($"{Theme.Skull} Deleting...", async _ =>
+            await client.Keys[settings.Prefix].RevokeAsync(cancellation));
 
-        console.MarkupLine($"[green]Deleted API key '{Markup.Escape(settings.Prefix)}'.[/]");
+        console.MarkupLine($"{Theme.Skull} Poof. API key [bold]'{Markup.Escape(settings.Prefix)}'[/] is gone.");
 
         return 0;
     }

@@ -23,13 +23,15 @@ public sealed class FileInfoCommand(CarbonFilesClient client, ApiClientFactory f
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var file = await client.Buckets[settings.BucketId].Files[settings.Path].GetMetadataAsync(cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(file));
+            var f = await client.Buckets[settings.BucketId].Files[settings.Path].GetMetadataAsync(cancellation);
+            console.WriteLine(JsonOutput.Serialize(f));
             return 0;
         }
+
+        var file = await console.Status().StartAsync($"{Theme.MagnifyingGlass} Fetching file info...", async _ =>
+            await client.Buckets[settings.BucketId].Files[settings.Path].GetMetadataAsync(cancellation));
 
         var table = new Table().NoBorder().HideHeaders();
         table.AddColumn("Property");

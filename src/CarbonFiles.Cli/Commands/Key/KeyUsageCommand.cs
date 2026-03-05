@@ -18,13 +18,15 @@ public sealed class KeyUsageCommand(CarbonFilesClient client, IAnsiConsole conso
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var result = await client.Keys[settings.Prefix].GetUsageAsync(cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(result));
+            var r = await client.Keys[settings.Prefix].GetUsageAsync(cancellation);
+            console.WriteLine(JsonOutput.Serialize(r));
             return 0;
         }
+
+        var result = await console.Status().StartAsync($"{Theme.MagnifyingGlass} Fetching usage...", async _ =>
+            await client.Keys[settings.Prefix].GetUsageAsync(cancellation));
 
         var grid = new Grid();
         grid.AddColumn();
@@ -50,7 +52,7 @@ public sealed class KeyUsageCommand(CarbonFilesClient client, IAnsiConsole conso
         {
             console.WriteLine();
 
-            var table = new Table();
+            var table = Theme.CreateTable();
             table.AddColumn(new TableColumn("[bold blue]Bucket ID[/]"));
             table.AddColumn(new TableColumn("[bold]Name[/]"));
             table.AddColumn(new TableColumn("[bold]Files[/]").RightAligned());

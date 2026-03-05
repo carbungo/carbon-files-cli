@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using CarbonFiles.Client.Models;
 using Spectre.Console;
@@ -43,7 +44,15 @@ public sealed class BucketUpdateCommand(CarbonFilesClient client, IAnsiConsole c
             ExpiresIn = settings.Expires,
         };
 
-        var bucket = await client.Buckets[settings.Id].UpdateAsync(request, cancellation);
+        if (settings.Json)
+        {
+            var b = await client.Buckets[settings.Id].UpdateAsync(request, cancellation);
+            console.WriteLine(JsonOutput.Serialize(b));
+            return 0;
+        }
+
+        var bucket = await console.Status().StartAsync($"{Theme.Sparkles} Updating bucket...", async _ =>
+            await client.Buckets[settings.Id].UpdateAsync(request, cancellation));
 
         var panel = new Panel(
             $"ID:          [blue]{bucket.Id}[/]\n" +
@@ -51,7 +60,7 @@ public sealed class BucketUpdateCommand(CarbonFilesClient client, IAnsiConsole c
             $"Owner:       [cyan]{Markup.Escape(bucket.Owner)}[/]\n" +
             $"Description: {Markup.Escape(bucket.Description ?? "-")}")
         {
-            Header = new PanelHeader("[green]Bucket Updated[/]"),
+            Header = new PanelHeader($"[green]{Theme.Sparkles} Bucket updated[/]"),
         };
 
         console.Write(panel);

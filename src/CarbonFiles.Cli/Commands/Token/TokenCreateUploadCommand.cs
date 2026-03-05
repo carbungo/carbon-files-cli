@@ -35,13 +35,15 @@ public sealed class TokenCreateUploadCommand(CarbonFilesClient client, ApiClient
             MaxUploads = settings.MaxUploads,
         };
 
-        var result = await client.Buckets[settings.BucketId].Tokens.CreateAsync(request, cancellation);
-
         if (settings.Json)
         {
-            console.WriteLine(JsonOutput.Serialize(result));
+            var r = await client.Buckets[settings.BucketId].Tokens.CreateAsync(request, cancellation);
+            console.WriteLine(JsonOutput.Serialize(r));
             return 0;
         }
+
+        var result = await console.Status().StartAsync($"{Theme.Rocket} Creating upload token...", async _ =>
+            await client.Buckets[settings.BucketId].Tokens.CreateAsync(request, cancellation));
 
         var rows = new List<IRenderable>
         {
@@ -63,7 +65,7 @@ public sealed class TokenCreateUploadCommand(CarbonFilesClient client, ApiClient
 
         var panel = new Panel(new Rows(rows))
         {
-            Header = new PanelHeader("Upload Token Created"),
+            Header = new PanelHeader($"{Theme.Rocket} Upload Token Created"),
             Border = BoxBorder.Rounded,
         };
 

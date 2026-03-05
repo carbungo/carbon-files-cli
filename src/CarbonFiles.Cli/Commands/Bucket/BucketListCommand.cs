@@ -36,24 +36,25 @@ public sealed class BucketListCommand(CarbonFilesClient client, IAnsiConsole con
             Offset = settings.Offset,
         };
 
-        var result = await client.Buckets.ListAsync(
-            pagination,
-            settings.IncludeExpired ? true : null,
-            cancellation);
+        PaginatedResponse<CarbonFiles.Client.Models.Bucket> result;
 
         if (settings.Json)
         {
+            result = await client.Buckets.ListAsync(pagination, settings.IncludeExpired ? true : null, cancellation);
             console.WriteLine(JsonOutput.Serialize(result));
             return 0;
         }
 
+        result = await console.Status().StartAsync($"{Theme.MagnifyingGlass} Fetching buckets...", async _ =>
+            await client.Buckets.ListAsync(pagination, settings.IncludeExpired ? true : null, cancellation));
+
         if (result.Items.Count == 0)
         {
-            console.MarkupLine("[yellow]No buckets found.[/]");
+            console.MarkupLine($"{Theme.Package} No buckets found.");
             return 0;
         }
 
-        var table = new Table();
+        var table = Theme.CreateTable();
         table.AddColumn(new TableColumn("[bold blue]ID[/]"));
         table.AddColumn(new TableColumn("[bold]Name[/]"));
         table.AddColumn(new TableColumn("[bold cyan]Owner[/]"));

@@ -21,7 +21,7 @@ public class HealthCheckCommandTests
         var result = app.Run("cmd");
 
         result.ExitCode.Should().Be(0);
-        result.Output.Should().Contain("Healthy");
+        result.Output.Should().Contain("All systems go");
         result.Output.Should().Contain("ok");
     }
 

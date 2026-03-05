@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -37,9 +38,10 @@ public sealed class ShortDeleteCommand(CarbonFilesClient client, IAnsiConsole co
             }
         }
 
-        await client.ShortUrls[settings.Code].DeleteAsync(cancellation);
+        await console.Status().StartAsync($"{Theme.Skull} Deleting...", async _ =>
+            await client.ShortUrls[settings.Code].DeleteAsync(cancellation));
 
-        console.MarkupLine($"[green]Deleted short URL '{Markup.Escape(settings.Code)}'.[/]");
+        console.MarkupLine($"{Theme.Skull} Poof. Short URL [bold]'{Markup.Escape(settings.Code)}'[/] is gone.");
 
         return 0;
     }
