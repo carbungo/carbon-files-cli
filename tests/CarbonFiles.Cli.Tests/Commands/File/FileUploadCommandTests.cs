@@ -8,8 +8,6 @@ public class FileUploadCommandTests
     [Fact]
     public void StdinMode_RequiresName()
     {
-        // When --stdin is used without -n, the Name property should be null
-        // The command should validate this at runtime
         var settings = new FileUploadCommand.Settings
         {
             BucketId = "bucket1",
@@ -75,5 +73,30 @@ public class FileUploadCommandTests
         };
 
         settings.Token.Should().Be("cfu_my_upload_token");
+    }
+
+    [Fact]
+    public void Settings_Flat_DefaultsFalse()
+    {
+        var settings = new FileUploadCommand.Settings
+        {
+            BucketId = "bucket1",
+            Paths = ["file.txt"],
+        };
+
+        settings.Flat.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("/home/user/project/src/utils/helper.cs", "/home/user/project", false, "src/utils/helper.cs")]
+    [InlineData("/home/user/project/src/main.cs", "/home/user/project", false, "src/main.cs")]
+    [InlineData("/home/user/project/readme.md", "/home/user/project", false, "readme.md")]
+    [InlineData("/tmp/other/file.txt", "/home/user/project", false, "file.txt")] // outside base dir → filename only
+    [InlineData("/home/user/project/src/utils/helper.cs", "/home/user/project", true, "helper.cs")] // flat mode
+    [InlineData("/home/user/project/docs/guide.md", "/home/user/project", true, "guide.md")] // flat mode
+    public void ComputeRemotePath_ResolvesCorrectly(string fullPath, string baseDir, bool flat, string expected)
+    {
+        var result = FileUploadCommand.ComputeRemotePath(fullPath, baseDir, flat);
+        result.Should().Be(expected);
     }
 }

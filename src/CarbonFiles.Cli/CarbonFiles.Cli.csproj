@@ -20,6 +20,10 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="CarbonFiles.Cli.Tests" />
+  </ItemGroup>
+
   <!-- Embed git commit hash and build date as assembly metadata -->
   <Target Name="SetBuildInfo" BeforeTargets="GetAssemblyAttributes;GenerateAssemblyInfo;CoreCompile">
     <Exec Command="git rev-parse --short HEAD" ConsoleToMSBuild="true" IgnoreExitCode="true">

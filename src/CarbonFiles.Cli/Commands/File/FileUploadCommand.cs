@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Net.Http.Headers;
 using CarbonFiles.Cli.Infrastructure;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
@@ -39,6 +38,15 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
         [CommandOption("--token <TOKEN>")]
         [Description("Upload token override (uses this instead of profile token).")]
         public string? Token { get; init; }
+
+        [CommandOption("--base-dir <DIR>")]
+        [Description("Base directory for computing relative remote paths (defaults to current directory).")]
+        public string? BaseDir { get; init; }
+
+        [CommandOption("--flat")]
+        [Description("Strip all directory paths and upload files with filename only.")]
+        [DefaultValue(false)]
+        public bool Flat { get; init; }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
@@ -70,8 +78,9 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
         return await UploadFilesAsync(settings, filePaths, cancellation);
     }
 
-    private List<(string LocalPath, string RemotePath)> ResolveFilePaths(Settings settings)
+    internal List<(string LocalPath, string RemotePath)> ResolveFilePaths(Settings settings)
     {
+        var baseDir = Path.GetFullPath(settings.BaseDir ?? Directory.GetCurrentDirectory());
         var files = new List<(string LocalPath, string RemotePath)>();
 
         foreach (var path in settings.Paths)
@@ -84,16 +93,18 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
                     continue;
                 }
 
-                var baseDir = Path.GetFullPath(path);
-                foreach (var file in Directory.EnumerateFiles(baseDir, "*", SearchOption.AllDirectories))
+                var dirFullPath = Path.GetFullPath(path);
+                foreach (var file in Directory.EnumerateFiles(dirFullPath, "*", SearchOption.AllDirectories))
                 {
-                    var relativePath = Path.GetRelativePath(baseDir, file).Replace('\\', '/');
-                    files.Add((file, relativePath));
+                    var remotePath = ComputeRemotePath(file, baseDir, settings.Flat);
+                    files.Add((file, remotePath));
                 }
             }
             else if (File.Exists(path))
             {
-                files.Add((path, Path.GetFileName(path)));
+                var fullPath = Path.GetFullPath(path);
+                var remotePath = ComputeRemotePath(fullPath, baseDir, settings.Flat);
+                files.Add((fullPath, remotePath));
             }
             else
             {
@@ -102,6 +113,20 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
         }
 
         return files;
+    }
+
+    internal static string ComputeRemotePath(string fullPath, string baseDir, bool flat)
+    {
+        if (flat)
+            return Path.GetFileName(fullPath);
+
+        var relativePath = Path.GetRelativePath(baseDir, fullPath).Replace('\\', '/');
+
+        // If the file is outside the base dir, GetRelativePath returns ../.. paths — fall back to filename
+        if (relativePath.StartsWith(".."))
+            return Path.GetFileName(fullPath);
+
+        return relativePath;
     }
 
     private async Task<int> UploadFromStdinAsync(Settings settings, CancellationToken cancellation)
