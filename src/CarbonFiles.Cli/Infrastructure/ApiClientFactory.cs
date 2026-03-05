@@ -1,32 +1,24 @@
-using System.Net.Http.Headers;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using CarbonFiles.Client;
-using Refit;
 using Spectre.Console;
 
 namespace CarbonFiles.Cli.Infrastructure;
 
 public sealed class ApiClientFactory(CliConfiguration config)
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
-
-    private static readonly RefitSettings RefitSettings = new()
-    {
-        ContentSerializer = new SystemTextJsonContentSerializer(JsonOptions)
-    };
-
     public IAnsiConsole? VerboseConsole { get; set; }
 
-    public ICarbonFilesApi Create(string? profileName = null)
+    public CarbonFilesClient Create(string? profileName = null)
     {
         var profile = GetProfile(profileName);
-        var httpClient = BuildHttpClient(profile);
-        return RestService.For<ICarbonFilesApi>(httpClient, RefitSettings);
+
+        var options = new CarbonFilesClientOptions
+        {
+            BaseAddress = new Uri(profile.Url),
+            ApiKey = profile.Token,
+            HttpClient = BuildHttpClient(profile),
+        };
+
+        return new CarbonFilesClient(options);
     }
 
     public Profile GetProfile(string? profileName = null)
@@ -63,9 +55,6 @@ public sealed class ApiClientFactory(CliConfiguration config)
         {
             httpClient = new HttpClient { BaseAddress = new Uri(profile.Url) };
         }
-
-        httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", profile.Token);
 
         return httpClient;
     }

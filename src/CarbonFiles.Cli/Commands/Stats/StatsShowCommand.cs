@@ -5,12 +5,12 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Stats;
 
-public sealed class StatsShowCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class StatsShowCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<GlobalSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, GlobalSettings settings, CancellationToken cancellation)
     {
-        var stats = await api.Stats(cancellation);
+        var stats = await client.Stats.GetAsync(cancellation);
 
         if (settings.Json)
         {

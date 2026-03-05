@@ -1,12 +1,12 @@
 using System.ComponentModel;
-using CarbonFiles.Cli.Infrastructure;
 using CarbonFiles.Cli.Rendering;
+using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Files;
 
-public sealed class FileDownloadCommand(ApiClientFactory factory, IAnsiConsole console)
+public sealed class FileDownloadCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<FileDownloadCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -34,32 +34,19 @@ public sealed class FileDownloadCommand(ApiClientFactory factory, IAnsiConsole c
             outputPath = "download";
         }
 
-        using var client = factory.CreateHttpClient(settings.Profile);
-
-        var encodedPath = Uri.EscapeDataString(remotePath);
-        using var response = await client.GetAsync(
-            $"/api/buckets/{settings.BucketId}/files/{encodedPath}/content",
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellation);
-        response.EnsureSuccessStatusCode();
-
-        var totalBytes = response.Content.Headers.ContentLength;
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellation);
+        await using var stream = await client.Buckets[settings.BucketId].Files[remotePath].DownloadAsync(cancellation);
         await using var fileStream = File.Create(outputPath);
 
         await console.Progress().StartAsync(async ctx =>
         {
-            var task = ctx.AddTask($"Downloading [blue]{Markup.Escape(System.IO.Path.GetFileName(outputPath))}[/]",
-                maxValue: totalBytes ?? 0);
-            task.IsIndeterminate = totalBytes is null;
+            var task = ctx.AddTask($"Downloading [blue]{Markup.Escape(System.IO.Path.GetFileName(outputPath))}[/]");
+            task.IsIndeterminate = true;
 
             var buffer = new byte[81920];
             int bytesRead;
-            long totalRead = 0;
             while ((bytesRead = await stream.ReadAsync(buffer, cancellation)) > 0)
             {
                 await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellation);
-                totalRead += bytesRead;
                 task.Increment(bytesRead);
             }
         });

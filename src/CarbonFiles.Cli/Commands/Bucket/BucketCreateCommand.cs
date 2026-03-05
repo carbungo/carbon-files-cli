@@ -2,12 +2,13 @@ using System.ComponentModel;
 using CarbonFiles.Cli.Infrastructure;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
+using CarbonFiles.Client.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Bucket;
 
-public sealed class BucketCreateCommand(ICarbonFilesApi api, ApiClientFactory factory, IAnsiConsole console)
+public sealed class BucketCreateCommand(CarbonFilesClient client, ApiClientFactory factory, IAnsiConsole console)
     : AsyncCommand<BucketCreateCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -34,7 +35,7 @@ public sealed class BucketCreateCommand(ICarbonFilesApi api, ApiClientFactory fa
             ExpiresIn = settings.Expires,
         };
 
-        var bucket = await api.BucketsPOST(request, cancellation);
+        var bucket = await client.Buckets.CreateAsync(request, cancellation);
 
         if (settings.Json)
         {

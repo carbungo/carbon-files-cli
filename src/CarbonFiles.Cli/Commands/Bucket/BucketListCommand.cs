@@ -1,12 +1,13 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
+using CarbonFiles.Client.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Bucket;
 
-public sealed class BucketListCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class BucketListCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<BucketListCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -29,11 +30,14 @@ public sealed class BucketListCommand(ICarbonFilesApi api, IAnsiConsole console)
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var result = await api.BucketsGET(
-            settings.Limit,
-            settings.Offset,
-            null,
-            null,
+        var pagination = new PaginationOptions
+        {
+            Limit = settings.Limit,
+            Offset = settings.Offset,
+        };
+
+        var result = await client.Buckets.ListAsync(
+            pagination,
             settings.IncludeExpired ? true : null,
             cancellation);
 

@@ -1,12 +1,13 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
+using CarbonFiles.Client.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Key;
 
-public sealed class KeyListCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class KeyListCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<KeyListCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -24,7 +25,13 @@ public sealed class KeyListCommand(ICarbonFilesApi api, IAnsiConsole console)
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var result = await api.KeysGET(settings.Limit, settings.Offset, null, null, cancellation);
+        var pagination = new PaginationOptions
+        {
+            Limit = settings.Limit,
+            Offset = settings.Offset,
+        };
+
+        var result = await client.Keys.ListAsync(pagination, cancellation);
 
         if (settings.Json)
         {

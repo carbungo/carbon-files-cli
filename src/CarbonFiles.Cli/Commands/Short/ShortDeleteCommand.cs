@@ -5,7 +5,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Short;
 
-public sealed class ShortDeleteCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class ShortDeleteCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<ShortDeleteCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -37,7 +37,7 @@ public sealed class ShortDeleteCommand(ICarbonFilesApi api, IAnsiConsole console
             }
         }
 
-        await api.Short(settings.Code, cancellation);
+        await client.ShortUrls[settings.Code].DeleteAsync(cancellation);
 
         console.MarkupLine($"[green]Deleted short URL '{Markup.Escape(settings.Code)}'.[/]");
 

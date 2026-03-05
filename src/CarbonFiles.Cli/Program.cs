@@ -1,3 +1,4 @@
+using CarbonFiles.Cli.Commands;
 using CarbonFiles.Cli.Commands.Bucket;
 using CarbonFiles.Cli.Commands.Config;
 using CarbonFiles.Cli.Commands.Files;
@@ -21,7 +22,7 @@ var cliConfig = CliConfiguration.Load();
 var apiFactory = new ApiClientFactory(cliConfig);
 services.AddSingleton(cliConfig);
 services.AddSingleton(apiFactory);
-services.AddTransient<ICarbonFilesApi>(sp =>
+services.AddTransient<CarbonFilesClient>(sp =>
 {
     var factory = sp.GetRequiredService<ApiClientFactory>();
     return factory.Create();
@@ -33,7 +34,7 @@ var app = new CommandApp(registrar);
 app.Configure(config =>
 {
     config.SetApplicationName("cf");
-    config.SetApplicationVersion("0.1.0");
+    config.SetApplicationVersion("0.2.0");
     config.SetInterceptor(new VerboseInterceptor(apiFactory));
 
     config.AddBranch("bucket", b =>
@@ -104,6 +105,7 @@ app.Configure(config =>
 
     config.AddCommand<StatsShowCommand>("stats").WithDescription("Show system-wide statistics.");
     config.AddCommand<HealthCheckCommand>("health").WithDescription("Check API health status.");
+    config.AddCommand<VersionCommand>("version").WithDescription("Show CLI version and build info.");
 });
 
 try

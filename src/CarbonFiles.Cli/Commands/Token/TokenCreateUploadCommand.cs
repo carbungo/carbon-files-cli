@@ -2,13 +2,14 @@ using System.ComponentModel;
 using CarbonFiles.Cli.Infrastructure;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
+using CarbonFiles.Client.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
 
 namespace CarbonFiles.Cli.Commands.Token;
 
-public sealed class TokenCreateUploadCommand(ICarbonFilesApi api, ApiClientFactory factory, IAnsiConsole console)
+public sealed class TokenCreateUploadCommand(CarbonFilesClient client, ApiClientFactory factory, IAnsiConsole console)
     : AsyncCommand<TokenCreateUploadCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -34,7 +35,7 @@ public sealed class TokenCreateUploadCommand(ICarbonFilesApi api, ApiClientFacto
             MaxUploads = settings.MaxUploads,
         };
 
-        var result = await api.Tokens(settings.BucketId, request, cancellation);
+        var result = await client.Buckets[settings.BucketId].Tokens.CreateAsync(request, cancellation);
 
         if (settings.Json)
         {

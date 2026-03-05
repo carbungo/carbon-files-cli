@@ -1,11 +1,12 @@
 using System.ComponentModel;
 using CarbonFiles.Client;
+using CarbonFiles.Client.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Bucket;
 
-public sealed class BucketUpdateCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class BucketUpdateCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<BucketUpdateCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -42,7 +43,7 @@ public sealed class BucketUpdateCommand(ICarbonFilesApi api, IAnsiConsole consol
             ExpiresIn = settings.Expires,
         };
 
-        var bucket = await api.BucketsPATCH(settings.Id, request, cancellation);
+        var bucket = await client.Buckets[settings.Id].UpdateAsync(request, cancellation);
 
         var panel = new Panel(
             $"ID:          [blue]{bucket.Id}[/]\n" +

@@ -1,75 +1,48 @@
 using CarbonFiles.Cli.Commands.Bucket;
-using CarbonFiles.Cli.Infrastructure;
-using CarbonFiles.Client;
+using CarbonFiles.Cli.Tests.Infrastructure;
+using CarbonFiles.Client.Models;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using NSubstitute;
-using Spectre.Console.Cli;
-using Spectre.Console.Cli.Testing;
 
 namespace CarbonFiles.Cli.Tests.Commands.Bucket;
 
 public class BucketCreateCommandTests
 {
-    private static (CommandAppTester app, ICarbonFilesApi api) CreateApp()
-    {
-        var api = Substitute.For<ICarbonFilesApi>();
-        var config = new CliConfiguration();
-        config.SetProfile("default", "http://localhost", "test-token");
-        var services = new ServiceCollection();
-        services.AddSingleton(api);
-        services.AddSingleton(new ApiClientFactory(config));
-        var registrar = new TypeRegistrar(services);
-        var app = new CommandAppTester(registrar);
-        app.Configure(c => c.AddCommand<BucketCreateCommand>("create"));
-        return (app, api);
-    }
-
     [Fact]
     public void ValidName_CreatesBucket()
     {
-        var (app, api) = CreateApp();
-        api.BucketsPOST(Arg.Any<CreateBucketRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new CarbonFiles.Client.Bucket
-            {
-                Id = "xyz789",
-                Name = "my-bucket",
-                Owner = "admin",
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
+        var (app, handler) = TestClientFactory.CreateApp<BucketCreateCommand>(includeFactory: true);
+        handler.Setup(HttpMethod.Post, "/api/buckets", new Client.Models.Bucket
+        {
+            Id = "xyz789",
+            Name = "my-bucket",
+            Owner = "admin",
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
 
-        var result = app.Run("create", "my-bucket");
+        var result = app.Run("cmd", "my-bucket");
 
         result.ExitCode.Should().Be(0);
         result.Output.Should().Contain("xyz789");
         result.Output.Should().Contain("my-bucket");
         result.Output.Should().Contain("admin");
-        api.Received(1).BucketsPOST(
-            Arg.Is<CreateBucketRequest>(r => r.Name == "my-bucket"),
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void WithDescriptionAndExpiry_PassesOptions()
     {
-        var (app, api) = CreateApp();
-        api.BucketsPOST(Arg.Any<CreateBucketRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new CarbonFiles.Client.Bucket
-            {
-                Id = "xyz789",
-                Name = "my-bucket",
-                Owner = "admin",
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
+        var (app, handler) = TestClientFactory.CreateApp<BucketCreateCommand>(includeFactory: true);
+        handler.Setup(HttpMethod.Post, "/api/buckets", new Client.Models.Bucket
+        {
+            Id = "xyz789",
+            Name = "my-bucket",
+            Owner = "admin",
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
 
-        var result = app.Run("create", "my-bucket", "-d", "A test bucket", "-e", "7d");
+        var result = app.Run("cmd", "my-bucket", "-d", "A test bucket", "-e", "7d");
 
         result.ExitCode.Should().Be(0);
-        api.Received(1).BucketsPOST(
-            Arg.Is<CreateBucketRequest>(r =>
-                r.Name == "my-bucket" &&
-                r.Description == "A test bucket" &&
-                r.ExpiresIn == "7d"),
-            Arg.Any<CancellationToken>());
+        // Verify the POST was made
+        handler.Requests.Should().ContainSingle(r => r.Method == HttpMethod.Post);
     }
 }

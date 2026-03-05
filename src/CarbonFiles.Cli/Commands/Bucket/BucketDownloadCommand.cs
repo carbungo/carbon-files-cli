@@ -1,11 +1,13 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Infrastructure;
+using CarbonFiles.Cli.Rendering;
+using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Bucket;
 
-public sealed class BucketDownloadCommand(ApiClientFactory factory, IAnsiConsole console)
+public sealed class BucketDownloadCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<BucketDownloadCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -22,23 +24,14 @@ public sealed class BucketDownloadCommand(ApiClientFactory factory, IAnsiConsole
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
         var outputPath = settings.Output ?? $"{settings.Id}.zip";
-        using var client = factory.CreateHttpClient(settings.Profile);
 
-        using var response = await client.GetAsync(
-            $"/api/buckets/{settings.Id}/zip",
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellation);
-        response.EnsureSuccessStatusCode();
-
-        var totalBytes = response.Content.Headers.ContentLength;
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellation);
+        await using var stream = await client.Buckets[settings.Id].DownloadZipAsync(cancellation);
         await using var fileStream = File.Create(outputPath);
 
         await console.Progress().StartAsync(async ctx =>
         {
-            var task = ctx.AddTask($"Downloading [blue]{Markup.Escape(settings.Id)}.zip[/]",
-                maxValue: totalBytes ?? 0);
-            task.IsIndeterminate = totalBytes is null;
+            var task = ctx.AddTask($"Downloading [blue]{Markup.Escape(settings.Id)}.zip[/]");
+            task.IsIndeterminate = true;
 
             var buffer = new byte[81920];
             int bytesRead;

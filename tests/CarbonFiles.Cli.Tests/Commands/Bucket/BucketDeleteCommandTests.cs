@@ -1,50 +1,32 @@
 using CarbonFiles.Cli.Commands.Bucket;
-using CarbonFiles.Cli.Infrastructure;
-using CarbonFiles.Client;
+using CarbonFiles.Cli.Tests.Infrastructure;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using NSubstitute;
-using Spectre.Console.Cli;
-using Spectre.Console.Cli.Testing;
 
 namespace CarbonFiles.Cli.Tests.Commands.Bucket;
 
 public class BucketDeleteCommandTests
 {
-    private static (CommandAppTester app, ICarbonFilesApi api) CreateApp()
-    {
-        var api = Substitute.For<ICarbonFilesApi>();
-        var services = new ServiceCollection();
-        services.AddSingleton(api);
-        var registrar = new TypeRegistrar(services);
-        var app = new CommandAppTester(registrar);
-        app.Configure(c => c.AddCommand<BucketDeleteCommand>("delete"));
-        return (app, api);
-    }
-
     [Fact]
     public void WithYesFlag_DeletesBucket()
     {
-        var (app, api) = CreateApp();
-        api.BucketsDELETE("abc123", Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
+        var (app, handler) = TestClientFactory.CreateApp<BucketDeleteCommand>();
+        handler.SetupDelete("/api/buckets/abc123");
 
-        var result = app.Run("delete", "abc123", "--yes");
+        var result = app.Run("cmd", "abc123", "--yes");
 
         result.ExitCode.Should().Be(0);
         result.Output.Should().Contain("Deleted");
-        api.Received(1).BucketsDELETE("abc123", Arg.Any<CancellationToken>());
+        handler.Requests.Should().ContainSingle(r => r.Method == HttpMethod.Delete);
     }
 
     [Fact]
     public void WithoutYesFlag_NonInteractive_DoesNotDelete()
     {
-        var (app, api) = CreateApp();
+        var (app, _) = TestClientFactory.CreateApp<BucketDeleteCommand>();
 
-        var result = app.Run("delete", "abc123");
+        var result = app.Run("cmd", "abc123");
 
         result.ExitCode.Should().Be(1);
         result.Output.Should().Contain("--yes");
-        api.DidNotReceive().BucketsDELETE(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

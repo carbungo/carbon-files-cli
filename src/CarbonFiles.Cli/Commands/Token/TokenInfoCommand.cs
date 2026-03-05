@@ -5,14 +5,14 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Token;
 
-public sealed class TokenInfoCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class TokenInfoCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<TokenInfoCommand.Settings>
 {
     public sealed class Settings : GlobalSettings;
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var info = await api.Me(cancellation);
+        var info = await client.Dashboard.GetCurrentUserAsync(cancellation);
 
         if (settings.Json)
         {

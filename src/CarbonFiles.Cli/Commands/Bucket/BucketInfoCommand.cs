@@ -7,7 +7,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Bucket;
 
-public sealed class BucketInfoCommand(ICarbonFilesApi api, ApiClientFactory factory, IAnsiConsole console)
+public sealed class BucketInfoCommand(CarbonFilesClient client, ApiClientFactory factory, IAnsiConsole console)
     : AsyncCommand<BucketInfoCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -19,7 +19,7 @@ public sealed class BucketInfoCommand(ICarbonFilesApi api, ApiClientFactory fact
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var bucket = await api.BucketsGET2(settings.Id, cancellation);
+        var bucket = await client.Buckets[settings.Id].GetAsync(cancellation);
 
         if (settings.Json)
         {
@@ -37,6 +37,7 @@ public sealed class BucketInfoCommand(ICarbonFilesApi api, ApiClientFactory fact
         infoTable.AddRow("Description", Markup.Escape(bucket.Description ?? "-"));
         infoTable.AddRow("Files", bucket.FileCount.ToString());
         infoTable.AddRow("Total Size", Formatting.FormatSize(bucket.TotalSize));
+        infoTable.AddRow("Unique Content", $"{bucket.UniqueContentCount} ({Formatting.FormatSize(bucket.UniqueContentSize)})");
         infoTable.AddRow("Created", Formatting.FormatDate(bucket.CreatedAt.UtcDateTime));
         infoTable.AddRow("Expires", Formatting.FormatExpiry(bucket.ExpiresAt?.UtcDateTime));
 

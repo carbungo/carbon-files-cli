@@ -1,58 +1,36 @@
 using CarbonFiles.Cli.Commands.Files;
-using CarbonFiles.Cli.Infrastructure;
-using CarbonFiles.Client;
+using CarbonFiles.Cli.Tests.Infrastructure;
+using CarbonFiles.Client.Models;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using NSubstitute;
-using Spectre.Console.Cli;
-using Spectre.Console.Cli.Testing;
 
 namespace CarbonFiles.Cli.Tests.Commands.File;
 
 public class FileListCommandTests
 {
-    private static (CommandAppTester app, ICarbonFilesApi api) CreateApp()
-    {
-        var api = Substitute.For<ICarbonFilesApi>();
-        var services = new ServiceCollection();
-        services.AddSingleton(api);
-        var registrar = new TypeRegistrar(services);
-        var app = new CommandAppTester(registrar);
-        app.Configure(c => c.AddCommand<FileListCommand>("cmd"));
-        return (app, api);
-    }
-
     [Fact]
     public void WithFiles_RendersTable()
     {
-        var (app, api) = CreateApp();
-        api.FilesGET(
-                "bucket1",
-                Arg.Any<int?>(),
-                Arg.Any<int?>(),
-                Arg.Any<string?>(),
-                Arg.Any<string?>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new PaginatedResponseOfBucketFile
+        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>();
+        handler.Setup(HttpMethod.Get, "/api/buckets/bucket1/files", new PaginatedResponse<BucketFile>
+        {
+            Items = new List<BucketFile>
             {
-                Items = new List<BucketFile>
+                new()
                 {
-                    new()
-                    {
-                        Path = "docs/readme.txt",
-                        Name = "readme.txt",
-                        Size = 2048,
-                        MimeType = "text/plain",
-                        ShortCode = "abc123",
-                        ShortUrl = "https://example.com/s/abc123",
-                        CreatedAt = DateTimeOffset.UtcNow,
-                        UpdatedAt = DateTimeOffset.UtcNow,
-                    }
-                },
-                Total = 1,
-                Limit = 50,
-                Offset = 0,
-            });
+                    Path = "docs/readme.txt",
+                    Name = "readme.txt",
+                    Size = 2048,
+                    MimeType = "text/plain",
+                    ShortCode = "abc123",
+                    ShortUrl = "https://example.com/s/abc123",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                }
+            },
+            Total = 1,
+            Limit = 50,
+            Offset = 0,
+        });
 
         var result = app.Run("cmd", "bucket1");
 
@@ -65,21 +43,14 @@ public class FileListCommandTests
     [Fact]
     public void Empty_ShowsMessage()
     {
-        var (app, api) = CreateApp();
-        api.FilesGET(
-                "bucket1",
-                Arg.Any<int?>(),
-                Arg.Any<int?>(),
-                Arg.Any<string?>(),
-                Arg.Any<string?>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new PaginatedResponseOfBucketFile
-            {
-                Items = new List<BucketFile>(),
-                Total = 0,
-                Limit = 50,
-                Offset = 0,
-            });
+        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>();
+        handler.Setup(HttpMethod.Get, "/api/buckets/bucket1/files", new PaginatedResponse<BucketFile>
+        {
+            Items = new List<BucketFile>(),
+            Total = 0,
+            Limit = 50,
+            Offset = 0,
+        });
 
         var result = app.Run("cmd", "bucket1");
 
@@ -90,35 +61,27 @@ public class FileListCommandTests
     [Fact]
     public void WithPath_UsesDirectoryListing()
     {
-        var (app, api) = CreateApp();
-        api.Ls(
-                "bucket1",
-                "docs/",
-                Arg.Any<int?>(),
-                Arg.Any<int?>(),
-                Arg.Any<string?>(),
-                Arg.Any<string?>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new DirectoryListingResponse
+        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>();
+        handler.Setup(HttpMethod.Get, "/api/buckets/bucket1/ls", new DirectoryListingResponse
+        {
+            Folders = new List<string> { "sub/" },
+            Files = new List<BucketFile>
             {
-                Folders = new List<string> { "sub/" },
-                Files = new List<BucketFile>
+                new()
                 {
-                    new()
-                    {
-                        Path = "docs/readme.txt",
-                        Name = "readme.txt",
-                        Size = 1024,
-                        MimeType = "text/plain",
-                        CreatedAt = DateTimeOffset.UtcNow,
-                        UpdatedAt = DateTimeOffset.UtcNow,
-                    }
-                },
-                TotalFiles = 1,
-                TotalFolders = 1,
-                Limit = 50,
-                Offset = 0,
-            });
+                    Path = "docs/readme.txt",
+                    Name = "readme.txt",
+                    Size = 1024,
+                    MimeType = "text/plain",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                }
+            },
+            TotalFiles = 1,
+            TotalFolders = 1,
+            Limit = 50,
+            Offset = 0,
+        });
 
         var result = app.Run("cmd", "bucket1", "--path", "docs/");
 

@@ -5,12 +5,12 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Health;
 
-public sealed class HealthCheckCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class HealthCheckCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<GlobalSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, GlobalSettings settings, CancellationToken cancellation)
     {
-        var health = await api.Healthz(cancellation);
+        var health = await client.Health.CheckAsync(cancellation);
 
         if (settings.Json)
         {

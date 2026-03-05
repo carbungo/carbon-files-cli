@@ -1,12 +1,13 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
+using CarbonFiles.Client.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Files;
 
-public sealed class FileListCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<FileListCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -42,13 +43,13 @@ public sealed class FileListCommand(ICarbonFilesApi api, IAnsiConsole console)
 
     private async Task<int> ListAllFilesAsync(Settings settings, CancellationToken cancellation)
     {
-        var result = await api.FilesGET(
-            settings.BucketId,
-            settings.Limit,
-            settings.Offset,
-            null,
-            null,
-            cancellation);
+        var pagination = new PaginationOptions
+        {
+            Limit = settings.Limit,
+            Offset = settings.Offset,
+        };
+
+        var result = await client.Buckets[settings.BucketId].Files.ListAsync(pagination, cancellation);
 
         if (settings.Json)
         {
@@ -85,14 +86,14 @@ public sealed class FileListCommand(ICarbonFilesApi api, IAnsiConsole console)
 
     private async Task<int> ListDirectoryAsync(Settings settings, CancellationToken cancellation)
     {
-        var result = await api.Ls(
-            settings.BucketId,
-            settings.Path,
-            settings.Limit,
-            settings.Offset,
-            null,
-            null,
-            cancellation);
+        var pagination = new PaginationOptions
+        {
+            Limit = settings.Limit,
+            Offset = settings.Offset,
+        };
+
+        var result = await client.Buckets[settings.BucketId].Files.ListDirectoryAsync(
+            settings.Path, pagination, cancellation);
 
         if (settings.Json)
         {

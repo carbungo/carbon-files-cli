@@ -5,7 +5,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Key;
 
-public sealed class KeyDeleteCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class KeyDeleteCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<KeyDeleteCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -37,7 +37,7 @@ public sealed class KeyDeleteCommand(ICarbonFilesApi api, IAnsiConsole console)
             }
         }
 
-        await api.KeysDELETE(settings.Prefix, cancellation);
+        await client.Keys[settings.Prefix].RevokeAsync(cancellation);
 
         console.MarkupLine($"[green]Deleted API key '{Markup.Escape(settings.Prefix)}'.[/]");
 

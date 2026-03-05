@@ -5,7 +5,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Files;
 
-public sealed class FileDeleteCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class FileDeleteCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<FileDeleteCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -41,7 +41,7 @@ public sealed class FileDeleteCommand(ICarbonFilesApi api, IAnsiConsole console)
             }
         }
 
-        await api.FilesDELETE(settings.BucketId, settings.Path, cancellation);
+        await client.Buckets[settings.BucketId].Files[settings.Path].DeleteAsync(cancellation);
 
         console.MarkupLine($"[green]Deleted file '{Markup.Escape(settings.Path)}' from bucket '{Markup.Escape(settings.BucketId)}'.[/]");
 

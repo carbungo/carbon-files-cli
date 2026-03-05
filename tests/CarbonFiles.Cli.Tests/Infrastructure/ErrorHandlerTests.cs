@@ -1,26 +1,18 @@
-using CarbonFiles.Cli.Infrastructure;
-using FluentAssertions;
-using Refit;
-using Spectre.Console.Testing;
 using System.Net;
+using CarbonFiles.Cli.Infrastructure;
+using CarbonFiles.Client;
+using FluentAssertions;
+using Spectre.Console.Testing;
 
 namespace CarbonFiles.Cli.Tests.Infrastructure;
 
 public class ErrorHandlerTests
 {
     [Fact]
-    public async Task Handle_ApiException_WithErrorBody_ShowsErrorAndHint()
+    public void Handle_CarbonFilesException_WithErrorAndHint_ShowsBoth()
     {
         var console = new TestConsole();
-        var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent("{\"error\":\"Bucket not found\",\"hint\":\"Check the bucket ID\"}")
-        };
-        var ex = await ApiException.Create(
-            new HttpRequestMessage(HttpMethod.Get, "http://test"),
-            HttpMethod.Get,
-            response,
-            new RefitSettings());
+        var ex = new CarbonFilesException(HttpStatusCode.BadRequest, "Bucket not found", "Check the bucket ID");
 
         var result = ErrorHandler.Handle(ex, console);
 
@@ -30,18 +22,10 @@ public class ErrorHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ApiException_WithErrorBodyNoHint_ShowsErrorOnly()
+    public void Handle_CarbonFilesException_WithErrorNoHint_ShowsErrorOnly()
     {
         var console = new TestConsole();
-        var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent("{\"error\":\"Something went wrong\"}")
-        };
-        var ex = await ApiException.Create(
-            new HttpRequestMessage(HttpMethod.Get, "http://test"),
-            HttpMethod.Get,
-            response,
-            new RefitSettings());
+        var ex = new CarbonFilesException(HttpStatusCode.BadRequest, "Something went wrong");
 
         var result = ErrorHandler.Handle(ex, console);
 
@@ -51,38 +35,10 @@ public class ErrorHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ApiException_WithNonJsonBody_ShowsStatusCode()
+    public void Handle_CarbonFilesException_Unauthorized_ShowsAuthHint()
     {
         var console = new TestConsole();
-        var response = new HttpResponseMessage(HttpStatusCode.InternalServerError)
-        {
-            Content = new StringContent("plain text error")
-        };
-        var ex = await ApiException.Create(
-            new HttpRequestMessage(HttpMethod.Get, "http://test"),
-            HttpMethod.Get,
-            response,
-            new RefitSettings());
-
-        var result = ErrorHandler.Handle(ex, console);
-
-        result.Should().Be(1);
-        console.Output.Should().Contain("500");
-    }
-
-    [Fact]
-    public async Task Handle_ApiException_Unauthorized_ShowsAuthHint()
-    {
-        var console = new TestConsole();
-        var response = new HttpResponseMessage(HttpStatusCode.Unauthorized)
-        {
-            Content = new StringContent("")
-        };
-        var ex = await ApiException.Create(
-            new HttpRequestMessage(HttpMethod.Get, "http://test"),
-            HttpMethod.Get,
-            response,
-            new RefitSettings());
+        var ex = new CarbonFilesException(HttpStatusCode.Unauthorized, "Unauthorized");
 
         var result = ErrorHandler.Handle(ex, console);
 

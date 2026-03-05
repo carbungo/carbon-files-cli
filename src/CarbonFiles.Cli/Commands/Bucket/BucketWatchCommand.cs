@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Infrastructure;
-using Microsoft.AspNetCore.SignalR.Client;
+using CarbonFiles.Cli.Rendering;
+using CarbonFiles.Client;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -18,29 +19,37 @@ public sealed class BucketWatchCommand(ApiClientFactory factory, IAnsiConsole co
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var profile = factory.GetProfile(settings.Profile);
-        var hubUrl = $"{profile.Url}/hub/files";
+        var client = factory.Create(settings.Profile);
+        var events = client.Events;
 
-        var connection = new HubConnectionBuilder()
-            .WithUrl(hubUrl, options =>
-            {
-                options.AccessTokenProvider = () => Task.FromResult<string?>(profile.Token);
-            })
-            .WithAutomaticReconnect()
-            .Build();
+        events.OnFileCreated((bucketId, file) =>
+        {
+            console.MarkupLine($"[green]+[/] [green]FileCreated[/]: {Markup.Escape(file.Path)} ({Formatting.FormatSize(file.Size)})");
+            return Task.CompletedTask;
+        });
+        events.OnFileUpdated((bucketId, file) =>
+        {
+            console.MarkupLine($"[yellow]~[/] [yellow]FileUpdated[/]: {Markup.Escape(file.Path)} ({Formatting.FormatSize(file.Size)})");
+            return Task.CompletedTask;
+        });
+        events.OnFileDeleted((bucketId, path) =>
+        {
+            console.MarkupLine($"[red]-[/] [red]FileDeleted[/]: {Markup.Escape(path)}");
+            return Task.CompletedTask;
+        });
+        events.OnBucketUpdated((bucketId, changes) =>
+        {
+            console.MarkupLine($"[blue]B[/] [blue]BucketUpdated[/]: {Markup.Escape(bucketId)}");
+            return Task.CompletedTask;
+        });
+        events.OnBucketDeleted(bucketId =>
+        {
+            console.MarkupLine($"[red]X[/] [red]BucketDeleted[/]: {Markup.Escape(bucketId)}");
+            return Task.CompletedTask;
+        });
 
-        connection.On<object>("FileCreated", data =>
-            console.MarkupLine($"[green]+[/] [green]FileCreated[/]: {data}"));
-        connection.On<object>("FileUpdated", data =>
-            console.MarkupLine($"[yellow]~[/] [yellow]FileUpdated[/]: {data}"));
-        connection.On<object>("FileDeleted", data =>
-            console.MarkupLine($"[red]-[/] [red]FileDeleted[/]: {data}"));
-        connection.On<object>("BucketUpdated", data =>
-            console.MarkupLine($"[blue]B[/] [blue]BucketUpdated[/]: {data}"));
-        connection.On<object>("BucketDeleted", data =>
-            console.MarkupLine($"[red]X[/] [red]BucketDeleted[/]: {data}"));
-
-        await connection.StartAsync(cancellation);
+        await events.ConnectAsync(cancellation);
+        await events.SubscribeToBucketAsync(settings.Id, cancellation);
 
         console.MarkupLine($"[bold]Watching bucket {Markup.Escape(settings.Id)} for changes...[/]");
         console.MarkupLine("[dim]Press Ctrl+C to stop.[/]");
@@ -55,7 +64,7 @@ public sealed class BucketWatchCommand(ApiClientFactory factory, IAnsiConsole co
         }
         finally
         {
-            await connection.DisposeAsync();
+            await events.DisposeAsync();
         }
 
         return 0;

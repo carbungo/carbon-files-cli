@@ -6,7 +6,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Key;
 
-public sealed class KeyUsageCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class KeyUsageCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<KeyUsageCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -18,7 +18,7 @@ public sealed class KeyUsageCommand(ICarbonFilesApi api, IAnsiConsole console)
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var result = await api.Usage(settings.Prefix, cancellation);
+        var result = await client.Keys[settings.Prefix].GetUsageAsync(cancellation);
 
         if (settings.Json)
         {

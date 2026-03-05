@@ -1,12 +1,13 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Rendering;
 using CarbonFiles.Client;
+using CarbonFiles.Client.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Token;
 
-public sealed class TokenCreateDashboardCommand(ICarbonFilesApi api, IAnsiConsole console)
+public sealed class TokenCreateDashboardCommand(CarbonFilesClient client, IAnsiConsole console)
     : AsyncCommand<TokenCreateDashboardCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -23,7 +24,7 @@ public sealed class TokenCreateDashboardCommand(ICarbonFilesApi api, IAnsiConsol
             ExpiresIn = settings.Expires,
         };
 
-        var result = await api.Dashboard(request, cancellation);
+        var result = await client.Dashboard.CreateTokenAsync(request, cancellation);
 
         if (settings.Json)
         {

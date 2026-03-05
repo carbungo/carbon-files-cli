@@ -7,7 +7,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Files;
 
-public sealed class FileInfoCommand(ICarbonFilesApi api, ApiClientFactory factory, IAnsiConsole console)
+public sealed class FileInfoCommand(CarbonFilesClient client, ApiClientFactory factory, IAnsiConsole console)
     : AsyncCommand<FileInfoCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -23,7 +23,7 @@ public sealed class FileInfoCommand(ICarbonFilesApi api, ApiClientFactory factor
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
     {
-        var file = await api.FilesGET2(settings.BucketId, settings.Path, cancellation);
+        var file = await client.Buckets[settings.BucketId].Files[settings.Path].GetMetadataAsync(cancellation);
 
         if (settings.Json)
         {
@@ -39,6 +39,7 @@ public sealed class FileInfoCommand(ICarbonFilesApi api, ApiClientFactory factor
         table.AddRow("Name", Markup.Escape(file.Name));
         table.AddRow("Size", Formatting.FormatSize(file.Size));
         table.AddRow("MIME Type", Markup.Escape(file.MimeType));
+        table.AddRow("SHA-256", Markup.Escape(file.Sha256 ?? "-"));
         table.AddRow("Short Code", Markup.Escape(file.ShortCode ?? "-"));
         table.AddRow("Short URL", Markup.Escape(file.ShortUrl ?? "-"));
 

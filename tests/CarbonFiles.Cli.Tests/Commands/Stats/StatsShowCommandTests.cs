@@ -1,57 +1,41 @@
 using CarbonFiles.Cli.Commands.Stats;
-using CarbonFiles.Cli.Infrastructure;
-using CarbonFiles.Client;
+using CarbonFiles.Cli.Tests.Infrastructure;
+using CarbonFiles.Client.Models;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using NSubstitute;
-using Spectre.Console.Cli;
-using Spectre.Console.Cli.Testing;
 
 namespace CarbonFiles.Cli.Tests.Commands.Stats;
 
 public class StatsShowCommandTests
 {
-    private static (CommandAppTester app, ICarbonFilesApi api) CreateApp<T>() where T : class, ICommand
-    {
-        var api = Substitute.For<ICarbonFilesApi>();
-        var services = new ServiceCollection();
-        services.AddSingleton(api);
-        var registrar = new TypeRegistrar(services);
-        var app = new CommandAppTester(registrar);
-        app.Configure(c => c.AddCommand<T>("cmd"));
-        return (app, api);
-    }
-
     [Fact]
     public void Stats_ShowsStats()
     {
-        var (app, api) = CreateApp<StatsShowCommand>();
-        api.Stats(Arg.Any<CancellationToken>())
-            .Returns(new StatsResponse
+        var (app, handler) = TestClientFactory.CreateApp<StatsShowCommand>();
+        handler.Setup(HttpMethod.Get, "/api/stats", new StatsResponse
+        {
+            TotalBuckets = 5,
+            TotalFiles = 42,
+            TotalSize = 1048576,
+            TotalKeys = 3,
+            TotalDownloads = 100,
+            StorageByOwner = new List<OwnerStats>
             {
-                TotalBuckets = 5,
-                TotalFiles = 42,
-                TotalSize = 1048576,
-                TotalKeys = 3,
-                TotalDownloads = 100,
-                StorageByOwner = new List<OwnerStats>
+                new()
                 {
-                    new()
-                    {
-                        Owner = "admin",
-                        BucketCount = 3,
-                        FileCount = 30,
-                        TotalSize = 524288,
-                    },
-                    new()
-                    {
-                        Owner = "deploy-key",
-                        BucketCount = 2,
-                        FileCount = 12,
-                        TotalSize = 524288,
-                    }
+                    Owner = "admin",
+                    BucketCount = 3,
+                    FileCount = 30,
+                    TotalSize = 524288,
+                },
+                new()
+                {
+                    Owner = "deploy-key",
+                    BucketCount = 2,
+                    FileCount = 12,
+                    TotalSize = 524288,
                 }
-            });
+            }
+        });
 
         var result = app.Run("cmd");
 
@@ -67,17 +51,16 @@ public class StatsShowCommandTests
     [Fact]
     public void Stats_NoOwners_ShowsSummaryOnly()
     {
-        var (app, api) = CreateApp<StatsShowCommand>();
-        api.Stats(Arg.Any<CancellationToken>())
-            .Returns(new StatsResponse
-            {
-                TotalBuckets = 0,
-                TotalFiles = 0,
-                TotalSize = 0,
-                TotalKeys = 0,
-                TotalDownloads = 0,
-                StorageByOwner = new List<OwnerStats>()
-            });
+        var (app, handler) = TestClientFactory.CreateApp<StatsShowCommand>();
+        handler.Setup(HttpMethod.Get, "/api/stats", new StatsResponse
+        {
+            TotalBuckets = 0,
+            TotalFiles = 0,
+            TotalSize = 0,
+            TotalKeys = 0,
+            TotalDownloads = 0,
+            StorageByOwner = new List<OwnerStats>()
+        });
 
         var result = app.Run("cmd");
 
