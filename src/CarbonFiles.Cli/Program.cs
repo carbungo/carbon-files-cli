@@ -34,7 +34,7 @@ var app = new CommandApp(registrar);
 app.Configure(config =>
 {
     config.SetApplicationName("cf");
-    config.SetApplicationVersion("0.2.0");
+    config.SetApplicationVersion(BuildInfo.InformationalVersion);
     config.SetInterceptor(new VerboseInterceptor(apiFactory));
 
     config.AddBranch("bucket", b =>
