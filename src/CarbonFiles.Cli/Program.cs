@@ -106,6 +106,7 @@ app.Configure(config =>
     config.AddCommand<StatsShowCommand>("stats").WithDescription("Show system-wide statistics.");
     config.AddCommand<HealthCheckCommand>("health").WithDescription("Check API health status.");
     config.AddCommand<VersionCommand>("version").WithDescription("Show CLI version and build info.");
+    config.AddCommand<UpdateCommand>("update").WithDescription("Update CLI from GitHub releases.");
 });
 
 try
