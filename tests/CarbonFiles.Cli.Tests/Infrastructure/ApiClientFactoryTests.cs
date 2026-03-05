@@ -59,4 +59,20 @@ public class ApiClientFactoryTests : IDisposable
 
         client.Should().NotBeNull();
     }
+
+    [Fact]
+    public void CreateHttpClient_HasInfiniteTimeout()
+    {
+        // The default 100-second HttpClient.Timeout causes large file uploads to fail mid-stream
+        // with "Error while copying content to a stream". Verify that the factory disables it.
+        var configPath = Path.Combine(_tempDir, "config.json");
+        var config = CliConfiguration.Load(configPath);
+        config.SetProfile("default", "https://example.com", "token");
+        config.Save();
+
+        var factory = new ApiClientFactory(config);
+        var httpClient = factory.CreateHttpClient();
+
+        httpClient.Timeout.Should().Be(Timeout.InfiniteTimeSpan);
+    }
 }

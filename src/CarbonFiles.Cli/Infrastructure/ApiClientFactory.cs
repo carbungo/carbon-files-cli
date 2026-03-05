@@ -56,6 +56,10 @@ public sealed class ApiClientFactory(CliConfiguration config)
             httpClient = new HttpClient { BaseAddress = new Uri(profile.Url) };
         }
 
+        // Disable the default 100-second timeout so large file uploads don't fail mid-stream.
+        // Cancellation is handled via the CancellationToken passed to each operation (e.g. Ctrl+C).
+        httpClient.Timeout = Timeout.InfiniteTimeSpan;
+
         return httpClient;
     }
 }
