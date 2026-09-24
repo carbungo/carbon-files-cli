@@ -3,6 +3,7 @@ using CarbonFiles.Cli.Infrastructure;
 using FluentAssertions;
 using NSubstitute;
 using Spectre.Console;
+using Spectre.Console.Testing;
 using IO = System.IO;
 
 namespace CarbonFiles.Cli.Tests.Commands.File;
@@ -215,5 +216,85 @@ public class FileUploadCommandTests
         {
             Directory.Delete(tempRoot, recursive: true);
         }
+    }
+
+    [Fact]
+    public void ResolveFilePaths_SingleFile_WithName_OverridesRemotePath()
+    {
+        var tempFile = Path.GetTempFileName();
+
+        try
+        {
+            var command = CreateCommand(Substitute.For<IAnsiConsole>());
+            var settings = new FileUploadCommand.Settings
+            {
+                BucketId = "bucket1",
+                Paths = [tempFile],
+                Name = "fonts/fonts.css",
+            };
+
+            var files = command.ResolveFilePaths(settings);
+
+            files.Should().ContainSingle();
+            files[0].LocalPath.Should().Be(Path.GetFullPath(tempFile));
+            files[0].RemotePath.Should().Be("fonts/fonts.css");
+        }
+        finally
+        {
+            IO.File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithNameAndMultiplePaths_ReturnsError()
+    {
+        var console = new TestConsole();
+        var command = CreateCommand(console);
+        var settings = new FileUploadCommand.Settings
+        {
+            BucketId = "bucket1",
+            Paths = ["first.txt", "second.txt"],
+            Name = "renamed.txt",
+        };
+
+        var result = await command.ExecuteAsync(null!, settings, CancellationToken.None);
+
+        result.Should().Be(1);
+        console.Output.Should().Contain("--name can only be used with a single file or --stdin.");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithNameAndRecursiveDirectory_ReturnsError()
+    {
+        var tempDir = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var console = new TestConsole();
+            var command = CreateCommand(console);
+            var settings = new FileUploadCommand.Settings
+            {
+                BucketId = "bucket1",
+                Paths = [tempDir.FullName],
+                Recursive = true,
+                Name = "renamed.txt",
+            };
+
+            var result = await command.ExecuteAsync(null!, settings, CancellationToken.None);
+
+            result.Should().Be(1);
+            console.Output.Should().Contain("--name can only be used with a single file or --stdin.");
+        }
+        finally
+        {
+            tempDir.Delete(recursive: true);
+        }
+    }
+
+    private static FileUploadCommand CreateCommand(IAnsiConsole console)
+    {
+        var config = new CliConfiguration();
+        config.SetProfile("default", "http://localhost", "token");
+        return new FileUploadCommand(new ApiClientFactory(config), console);
     }
 }

@@ -32,7 +32,7 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
         public bool Stdin { get; init; }
 
         [CommandOption("-n|--name <NAME>")]
-        [Description("File name for stdin mode.")]
+        [Description("Override remote file name/path (single file or stdin).")]
         public string? Name { get; init; }
 
         [CommandOption("--token <TOKEN>")]
@@ -65,6 +65,14 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
         if (settings.Paths.Length == 0)
         {
             console.MarkupLine("[red]Error: Provide at least one file path or use --stdin.[/]");
+            return 1;
+        }
+
+        if (!string.IsNullOrEmpty(settings.Name) &&
+            (settings.Paths.Length != 1 ||
+             (settings.Recursive && Directory.Exists(settings.Paths[0]))))
+        {
+            console.MarkupLine("[red]Error: --name can only be used with a single file or --stdin.[/]");
             return 1;
         }
 
@@ -108,7 +116,9 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
             {
                 var fullPath = Path.GetFullPath(path);
                 var baseDir = explicitBaseDir ?? defaultFileBase;
-                var remotePath = ComputeRemotePath(fullPath, baseDir, settings.Flat);
+                var remotePath = string.IsNullOrEmpty(settings.Name)
+                    ? ComputeRemotePath(fullPath, baseDir, settings.Flat)
+                    : settings.Name;
                 files.Add((fullPath, remotePath));
             }
             else
