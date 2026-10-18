@@ -4,6 +4,7 @@ using FluentAssertions;
 using NSubstitute;
 using Spectre.Console;
 using Spectre.Console.Testing;
+using CarbonFiles.Cli.Tests.Infrastructure;
 using IO = System.IO;
 
 namespace CarbonFiles.Cli.Tests.Commands.File;
@@ -289,6 +290,38 @@ public class FileUploadCommandTests
         {
             tempDir.Delete(recursive: true);
         }
+    }
+
+    [Theory]
+    [InlineData("cfu_from_config", null)]
+    [InlineData("api_key", "cfu_from_option")]
+    public async Task UploadToken_IsSentInQueryAndNotAsBearer(string configuredToken, string? tokenOption)
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            IO.File.WriteAllText(path, "hello");
+            var handler = new MockHttpHandler();
+            handler.Setup(HttpMethod.Put, "/api/buckets/bucket1/upload/stream", new
+            {
+                uploaded = new[] { new { path = "test.txt", name = "test.txt", size = 5, mime_type = "text/plain", deduplicated = false } }
+            }, System.Net.HttpStatusCode.Created);
+            var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost") };
+            var config = new CliConfiguration();
+            config.SetProfile("default", "http://localhost", configuredToken);
+            var factory = new ApiClientFactory(config, _ => http, _ => null);
+            var command = new FileUploadCommand(factory, new TestConsole());
+            var settings = new FileUploadCommand.Settings
+            {
+                BucketId = "bucket1", Paths = [path], Name = "test.txt", Token = tokenOption,
+            };
+            (await command.ExecuteAsync(null!, settings, default)).Should().Be(0);
+            handler.Requests.Should().ContainSingle();
+            var request = handler.Requests[0];
+            request.Headers.Authorization.Should().BeNull();
+            request.RequestUri!.Query.Should().Contain("token=" + (tokenOption ?? configuredToken));
+        }
+        finally { IO.File.Delete(path); }
     }
 
     private static FileUploadCommand CreateCommand(IAnsiConsole console)

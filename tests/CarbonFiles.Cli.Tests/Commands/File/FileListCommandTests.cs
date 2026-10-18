@@ -2,6 +2,7 @@ using CarbonFiles.Cli.Commands.Files;
 using CarbonFiles.Cli.Tests.Infrastructure;
 using CarbonFiles.Client.Models;
 using FluentAssertions;
+using System.Net;
 
 namespace CarbonFiles.Cli.Tests.Commands.File;
 
@@ -10,7 +11,7 @@ public class FileListCommandTests
     [Fact]
     public void WithFiles_RendersTable()
     {
-        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>();
+        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>(includeFactory: true);
         handler.Setup(HttpMethod.Get, "/api/buckets/bucket1/files", new PaginatedResponse<BucketFile>
         {
             Items = new List<BucketFile>
@@ -43,7 +44,7 @@ public class FileListCommandTests
     [Fact]
     public void Empty_ShowsMessage()
     {
-        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>();
+        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>(includeFactory: true);
         handler.Setup(HttpMethod.Get, "/api/buckets/bucket1/files", new PaginatedResponse<BucketFile>
         {
             Items = new List<BucketFile>(),
@@ -59,9 +60,24 @@ public class FileListCommandTests
     }
 
     [Fact]
+    public void UploadTokenOverride_ListsWithoutBearerHeader()
+    {
+        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>(includeFactory: true);
+        handler.Setup(HttpMethod.Get, "/api/buckets/bucket1/files", new PaginatedResponse<BucketFile>
+        {
+            Items = [], Total = 0, Limit = 50, Offset = 0,
+        });
+        var result = app.Run("cmd", "bucket1", "--token", "cfu_secret");
+        result.ExitCode.Should().Be(0);
+        handler.Requests.Should().ContainSingle();
+        handler.Requests[0].Headers.Authorization.Should().BeNull();
+        handler.Requests[0].RequestUri!.Query.Should().NotContain("cfu_secret");
+    }
+
+    [Fact]
     public void WithPath_UsesDirectoryListing()
     {
-        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>();
+        var (app, handler) = TestClientFactory.CreateApp<FileListCommand>(includeFactory: true);
         handler.Setup(HttpMethod.Get, "/api/buckets/bucket1/ls", new DirectoryListingResponse
         {
             Folders = new List<string> { "sub/" },
