@@ -6,7 +6,8 @@ public sealed class VerboseLoggingHandler(IAnsiConsole console) : DelegatingHand
 {
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        console.MarkupLine($"[dim]> {request.Method} {Markup.Escape(request.RequestUri?.ToString() ?? "")}[/]");
+        // Query strings may contain upload tokens; never include them in diagnostics.
+        console.MarkupLine($"[dim]> {request.Method} {Markup.Escape(request.RequestUri?.GetLeftPart(UriPartial.Path) ?? "")}[/]");
 
         foreach (var header in request.Headers)
         {
@@ -18,9 +19,7 @@ public sealed class VerboseLoggingHandler(IAnsiConsole console) : DelegatingHand
 
         if (request.Content is not null)
         {
-            var body = await request.Content.ReadAsStringAsync(cancellationToken);
-            if (!string.IsNullOrEmpty(body))
-                console.MarkupLine($"[dim]> Body: {Markup.Escape(body)}[/]");
+            console.MarkupLine($"[dim]> Content-Type: {Markup.Escape(request.Content.Headers.ContentType?.ToString() ?? "unknown")}[/]");
         }
 
         console.MarkupLine("[dim]>[/]");
@@ -29,13 +28,6 @@ public sealed class VerboseLoggingHandler(IAnsiConsole console) : DelegatingHand
 
         console.MarkupLine($"[dim]< {(int)response.StatusCode} {Markup.Escape(response.ReasonPhrase ?? "")}[/]");
 
-        if (response.Content.Headers.ContentType?.MediaType?.Contains("json") == true)
-        {
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            if (!string.IsNullOrEmpty(responseBody))
-                console.MarkupLine($"[dim]< {Markup.Escape(responseBody)}[/]");
-        }
-
         console.MarkupLine("[dim]<[/]");
 
         return response;
@@ -43,7 +35,6 @@ public sealed class VerboseLoggingHandler(IAnsiConsole console) : DelegatingHand
 
     private static string MaskAuthHeader(string value)
     {
-        if (value.Length <= 12) return "****";
-        return value[..12] + "****";
+        return "****";
     }
 }

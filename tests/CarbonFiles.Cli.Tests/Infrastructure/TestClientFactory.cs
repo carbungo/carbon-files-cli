@@ -25,7 +25,7 @@ public static class TestClientFactory
 
         var config = new CliConfiguration();
         config.SetProfile("default", "http://localhost", "test-token");
-        var factory = new ApiClientFactory(config);
+        var factory = new ApiClientFactory(config, _ => httpClient);
 
         var services = new ServiceCollection();
         services.AddSingleton(client);

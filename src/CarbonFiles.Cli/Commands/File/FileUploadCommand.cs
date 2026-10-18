@@ -158,7 +158,7 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
             result = await files.UploadAsync(
                 Console.OpenStandardInput(),
                 settings.Name!,
-                uploadToken: settings.Token,
+                uploadToken: UploadToken(settings),
                 ct: cancellation);
 
             task.StopTask();
@@ -192,7 +192,7 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
                     localPath,
                     remotePath,
                     progress,
-                    settings.Token,
+                    UploadToken(settings),
                     cancellation);
 
                 allUploaded.AddRange(result.Uploaded);
@@ -207,7 +207,13 @@ public sealed class FileUploadCommand(ApiClientFactory factory, IAnsiConsole con
 
     private CarbonFilesClient CreateClient(Settings settings)
     {
-        return factory.Create(settings.Profile);
+        return factory.Create(settings.Profile, settings.Token);
+    }
+
+    private string? UploadToken(Settings settings)
+    {
+        var token = settings.Token ?? factory.GetProfile(settings.Profile, settings.Token).Token;
+        return ApiClientFactory.IsUploadToken(token) ? token : null;
     }
 
     private void PrintSummary(string bucketId, string? profileName, List<UploadedFile> results)

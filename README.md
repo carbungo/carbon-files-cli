@@ -58,6 +58,7 @@ cf file download <bucket-id> document.pdf
 | `cf file list <bucket-id>` | List files in a bucket |
 | `cf file info <bucket-id> <path>` | Show file details |
 | `cf file upload <bucket-id> [paths]` | Upload files to a bucket |
+| `cf deploy <directory> <bucket-id>` | Sync a static site directory to a bucket |
 | `cf file download <bucket-id> <path>` | Download a file from a bucket |
 | `cf file delete <bucket-id> <path>` | Delete a file |
 | **API Keys** | |
@@ -79,6 +80,8 @@ cf file download <bucket-id> document.pdf
 ## Configuration
 
 The CLI stores its configuration in `~/.cf/config.json`. Configuration is organized into named profiles, allowing you to connect to multiple CarbonFiles servers or use different credentials.
+
+For CI, set `CF_URL` and `CF_TOKEN` instead of writing a profile. These override the active profile for ordinary commands. `--token` on `cf file upload`, `cf file list`, and `cf deploy` overrides the configured token. Upload tokens (`cfu_…`) are scoped to one bucket and are sent in the upload and deploy query parameters. API keys use Bearer authentication. File listing is public.
 
 ### Setting up a profile
 
@@ -133,6 +136,20 @@ cf bucket create "Sprint Demo" -d "Files for the sprint review" -e 7d
 ```bash
 cf file upload abc123 ./build-output/ -r
 ```
+
+### Deploy a static site
+
+```bash
+CF_URL=https://files.example.com CF_TOKEN=cfu_your_upload_token cf deploy ./out abc123
+
+# Preview changed uploads and files that would be pruned
+cf deploy ./out abc123 --dry-run
+
+# Upload changed files without deleting old files
+cf deploy ./out abc123 --no-prune
+```
+
+Deploy hashes local files, reads all remote pages, uploads changed assets before HTML, then verifies a manifest and prunes stale files. Uploads run four at a time by default (`--concurrency` accepts 1–32) and transient requests are retried. The directory must contain 1–10000 files and cannot contain symlinks. Output stays plain in CI and the command exits nonzero on failure.
 
 ### Pipe content from stdin
 

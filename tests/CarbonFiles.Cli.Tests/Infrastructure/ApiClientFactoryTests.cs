@@ -75,4 +75,35 @@ public class ApiClientFactoryTests : IDisposable
 
         httpClient.Timeout.Should().Be(Timeout.InfiniteTimeSpan);
     }
+
+    [Fact]
+    public void UploadToken_IsRecognizedOnlyWithCfuPrefix()
+    {
+        ApiClientFactory.IsUploadToken("cfu_test").Should().BeTrue();
+        ApiClientFactory.IsUploadToken("cf4_test").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Environment_ProvidesConfigurationWithoutSavedProfile()
+    {
+        var config = CliConfiguration.Load(Path.Combine(_tempDir, "missing.json"));
+        var factory = new ApiClientFactory(config, environment: name => name switch
+        {
+            "CF_URL" => "http://localhost:1234/",
+            "CF_TOKEN" => "cfu_from_environment",
+            _ => null,
+        });
+        var profile = factory.GetProfile();
+        profile.Url.Should().Be("http://localhost:1234");
+        profile.Token.Should().Be("cfu_from_environment");
+        factory.Create().Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TokenOverride_WorksWithOnlyUrlInEnvironment()
+    {
+        var config = CliConfiguration.Load(Path.Combine(_tempDir, "missing.json"));
+        var factory = new ApiClientFactory(config, environment: name => name == "CF_URL" ? "http://localhost" : null);
+        factory.GetProfile(tokenOverride: "cfu_override").Token.Should().Be("cfu_override");
+    }
 }

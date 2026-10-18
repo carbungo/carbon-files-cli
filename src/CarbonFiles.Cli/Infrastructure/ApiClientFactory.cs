@@ -3,47 +3,70 @@ using Spectre.Console;
 
 namespace CarbonFiles.Cli.Infrastructure;
 
-public sealed class ApiClientFactory(CliConfiguration config)
+public sealed class ApiClientFactory(CliConfiguration config, Func<Profile, HttpClient>? httpClientBuilder = null,
+    Func<string, string?>? environment = null)
 {
     public IAnsiConsole? VerboseConsole { get; set; }
 
-    public CarbonFilesClient Create(string? profileName = null)
+    public CarbonFilesClient Create(string? profileName = null, string? tokenOverride = null)
     {
-        var profile = GetProfile(profileName);
+        var profile = GetProfile(profileName, tokenOverride);
+        var token = tokenOverride ?? profile.Token;
 
         var options = new CarbonFilesClientOptions
         {
             BaseAddress = new Uri(profile.Url),
-            ApiKey = profile.Token,
+            ApiKey = IsUploadToken(token) ? null : token,
             HttpClient = BuildHttpClient(profile),
         };
 
         return new CarbonFilesClient(options);
     }
 
-    public Profile GetProfile(string? profileName = null)
+    public Profile GetProfile(string? profileName = null, string? tokenOverride = null)
     {
-        var profile = profileName is not null
+        var saved = profileName is not null
             ? config.Profiles.GetValueOrDefault(profileName)
             : config.GetActiveProfile();
+        var url = (environment ?? Environment.GetEnvironmentVariable)("CF_URL");
+        var token = (environment ?? Environment.GetEnvironmentVariable)("CF_TOKEN");
+        if (profileName is null && (!string.IsNullOrWhiteSpace(url) || !string.IsNullOrWhiteSpace(token) || tokenOverride is not null))
+        {
+            var effective = new Profile
+            {
+                Url = !string.IsNullOrWhiteSpace(url) ? url.TrimEnd('/') : saved?.Url ?? string.Empty,
+                Token = tokenOverride ?? (!string.IsNullOrWhiteSpace(token) ? token : saved?.Token ?? string.Empty),
+                FrontendUrl = saved?.FrontendUrl,
+            };
+            if (!string.IsNullOrWhiteSpace(effective.Url) && !string.IsNullOrWhiteSpace(effective.Token))
+                return effective;
+        }
 
-        if (profile is null)
+        if (saved is null)
         {
             throw new InvalidOperationException(
                 "No server configured. Run: cf config set --url <url> --token <token>");
         }
 
-        return profile;
+        return saved;
     }
 
-    public HttpClient CreateHttpClient(string? profileName = null)
+    public static bool IsUploadToken(string? token) => token?.StartsWith("cfu_", StringComparison.Ordinal) == true;
+
+    public HttpClient CreateHttpClient(string? profileName = null, string? tokenOverride = null)
     {
-        var profile = GetProfile(profileName);
+        var profile = GetProfile(profileName, tokenOverride);
         return BuildHttpClient(profile);
     }
 
     private HttpClient BuildHttpClient(Profile profile)
     {
+        if (httpClientBuilder is not null)
+        {
+            var provided = httpClientBuilder(profile);
+            provided.Timeout = Timeout.InfiniteTimeSpan;
+            return provided;
+        }
         HttpClient httpClient;
 
         if (VerboseConsole is not null)

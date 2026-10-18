@@ -19,7 +19,7 @@ public static class ErrorHandler
                 return 1;
 
             case InvalidOperationException opEx when opEx.Message.Contains("cf config set"):
-                console.MarkupLine($"{Theme.CrossMark} [red]{Markup.Escape(opEx.Message)}[/]");
+                console.MarkupLine($"{Theme.CrossMark} [red]{Markup.Escape(SecretRedaction.Redact(opEx.Message))}[/]");
                 return 1;
 
             default:
@@ -28,7 +28,7 @@ public static class ErrorHandler
                     HandleCarbonFilesException(innerCfEx, console);
                     return 1;
                 }
-                console.MarkupLine($"{Theme.CrossMark} [red]Error:[/] {Markup.Escape(ex.Message)}");
+                console.MarkupLine($"{Theme.CrossMark} [red]Error:[/] {Markup.Escape(SecretRedaction.Redact(ex.Message))}");
                 return 1;
         }
     }
@@ -46,7 +46,7 @@ public static class ErrorHandler
         }
         else
         {
-            console.MarkupLine($"{Theme.CrossMark} [red]Connection error:[/] {Markup.Escape(ex.Message)}");
+            console.MarkupLine($"{Theme.CrossMark} [red]Connection error:[/] {Markup.Escape(SecretRedaction.Redact(ex.Message))}");
         }
 
         console.MarkupLine($"   {Theme.LightBulb} Check your server URL with: cf config show");
@@ -54,10 +54,10 @@ public static class ErrorHandler
 
     private static void HandleCarbonFilesException(CarbonFilesException ex, IAnsiConsole console)
     {
-        console.MarkupLine($"{Theme.CrossMark} [red]{Markup.Escape(ex.Error)}[/]");
+        console.MarkupLine($"{Theme.CrossMark} [red]{Markup.Escape(SecretRedaction.Redact(ex.Error))}[/]");
 
         if (!string.IsNullOrEmpty(ex.Hint))
-            console.MarkupLine($"   {Theme.LightBulb} {Markup.Escape(ex.Hint)}");
+            console.MarkupLine($"   {Theme.LightBulb} {Markup.Escape(SecretRedaction.Redact(ex.Hint))}");
 
         if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized || ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
             console.MarkupLine($"   {Theme.LightBulb} Check your auth token with: cf config show");

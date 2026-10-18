@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using CarbonFiles.Cli.Rendering;
+using CarbonFiles.Cli.Infrastructure;
 using CarbonFiles.Client;
 using CarbonFiles.Client.Models;
 using Spectre.Console;
@@ -7,7 +8,7 @@ using Spectre.Console.Cli;
 
 namespace CarbonFiles.Cli.Commands.Files;
 
-public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole console)
+public sealed class FileListCommand(ApiClientFactory factory, IAnsiConsole console)
     : AsyncCommand<FileListCommand.Settings>
 {
     public sealed class Settings : GlobalSettings
@@ -29,6 +30,10 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
         [Description("Number of files to skip.")]
         [DefaultValue(0)]
         public int Offset { get; init; }
+
+        [CommandOption("--token <TOKEN>")]
+        [Description("Upload token or API key override (listing is public).")]
+        public string? Token { get; init; }
     }
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellation)
@@ -43,6 +48,7 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
 
     private async Task<int> ListAllFilesAsync(Settings settings, CancellationToken cancellation)
     {
+        var client = factory.Create(settings.Profile, settings.Token);
         var pagination = new PaginationOptions
         {
             Limit = settings.Limit,
@@ -69,6 +75,7 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
         table.AddColumn(new TableColumn("[bold]Path[/]"));
         table.AddColumn(new TableColumn("[bold]Size[/]").RightAligned());
         table.AddColumn(new TableColumn("[bold]Type[/]"));
+        table.AddColumn(new TableColumn("[bold]SHA-256[/]"));
         table.AddColumn(new TableColumn("[bold]Created[/]"));
 
         foreach (var file in result.Items)
@@ -77,6 +84,7 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
                 Markup.Escape(file.Path),
                 Formatting.FormatSize(file.Size),
                 Markup.Escape(file.MimeType),
+                Markup.Escape(file.Sha256 ?? "-"),
                 Formatting.FormatDate(file.CreatedAt.UtcDateTime));
         }
 
@@ -88,6 +96,7 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
 
     private async Task<int> ListDirectoryAsync(Settings settings, CancellationToken cancellation)
     {
+        var client = factory.Create(settings.Profile, settings.Token);
         var pagination = new PaginationOptions
         {
             Limit = settings.Limit,
@@ -118,6 +127,7 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
         table.AddColumn(new TableColumn("[bold]Path[/]"));
         table.AddColumn(new TableColumn("[bold]Size[/]").RightAligned());
         table.AddColumn(new TableColumn("[bold]Type[/]"));
+        table.AddColumn(new TableColumn("[bold]SHA-256[/]"));
         table.AddColumn(new TableColumn("[bold]Created[/]"));
 
         foreach (var folder in result.Folders)
@@ -126,6 +136,7 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
                 $"[blue]{Markup.Escape(folder)}[/]",
                 "-",
                 "folder",
+                "-",
                 "-");
         }
 
@@ -135,6 +146,7 @@ public sealed class FileListCommand(CarbonFilesClient client, IAnsiConsole conso
                 Markup.Escape(file.Path),
                 Formatting.FormatSize(file.Size),
                 Markup.Escape(file.MimeType),
+                Markup.Escape(file.Sha256 ?? "-"),
                 Formatting.FormatDate(file.CreatedAt.UtcDateTime));
         }
 
