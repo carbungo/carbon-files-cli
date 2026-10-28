@@ -11,7 +11,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>cf</ToolCommandName>
     <PackageId>CarbonFiles.Cli</PackageId>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
     <Authors>CarbonFiles</Authors>
     <Description>CLI tool for CarbonFiles file-sharing API</Description>
     <PackageTags>carbonfiles;cli;file-sharing</PackageTags>
@@ -57,9 +57,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CarbonFiles.Client" Version="0.3.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
-    <PackageReference Include="Spectre.Console" Version="0.54.0" />
-    <PackageReference Include="Spectre.Console.Cli" Version="0.53.1" />
+    <PackageReference Include="CarbonFiles.Client" Version="0.5.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <PackageReference Include="Spectre.Console" Version="0.57.2" />
+    <PackageReference Include="Spectre.Console.Cli" Version="0.57.2" />
   </ItemGroup>
 </Project>
